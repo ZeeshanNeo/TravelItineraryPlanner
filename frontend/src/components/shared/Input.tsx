@@ -26,7 +26,7 @@ const Input = ({ label, error, fullWidth = false, leftIcon, rightIcon, className
           </div>
         )}
         <input
-          className={`px-4 py-3.5 bg-muted border-2 rounded-2xl shadow-sm focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-600 focus:bg-card outline-none transition-all duration-300 ${error ? 'border-rose-500' : 'border-border'} ${widthClass} ${leftIcon ? 'pl-12' : ''} ${rightIcon ? 'pr-12' : ''} ${className}`}
+          className={`px-5 py-4 bg-slate-50 dark:bg-slate-900 border-2 rounded-2xl shadow-sm focus:ring-4 focus:ring-primary/10 focus:border-primary focus:bg-white dark:focus:bg-slate-800 outline-none transition-all duration-300 font-bold text-foreground placeholder:text-muted-foreground/50 placeholder:font-medium ${error ? 'border-rose-500' : 'border-border'} ${widthClass} ${leftIcon ? 'pl-14' : ''} ${rightIcon ? 'pr-14' : ''} ${className}`}
           {...props}
         />
         {rightIcon && (

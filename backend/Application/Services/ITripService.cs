@@ -14,4 +14,5 @@ public interface ITripService
     Task<TripResponse> UpdateTripAsync(Guid tripId, UpdateTripRequest request, Guid userId, CancellationToken cancellationToken = default);
     Task ArchiveTripAsync(Guid tripId, ArchiveTripRequest request, Guid userId, CancellationToken cancellationToken = default);
     Task DeleteTripAsync(Guid tripId, Guid userId, CancellationToken cancellationToken = default);
+    Task<GlobalStatisticsResponse> GetGlobalStatisticsAsync(Guid userId, CancellationToken cancellationToken = default);
 }

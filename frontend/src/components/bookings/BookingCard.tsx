@@ -31,13 +31,30 @@ const BookingCard: React.FC<BookingCardProps> = ({
   };
 
   const getCategoryImage = (category: BookingCategory) => {
-    switch (category) {
-      case BookingCategory.Flight: return 'https://images.unsplash.com/photo-1436491865332-7a61a109c0f2?auto=format&fit=crop&q=80&w=800';
-      case BookingCategory.Accommodation: return 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=800';
-      case BookingCategory.Transportation: return 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=800';
-      case BookingCategory.Activity: return 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&q=80&w=800';
-      default: return 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&q=80&w=800';
-    }
+    const fallbacks: Record<string, string[]> = {
+      Flight: [
+        'https://images.unsplash.com/photo-1436491865332-7a61a109c0f2?auto=format&fit=crop&q=80&w=1200',
+        'https://images.unsplash.com/photo-1542296332-2e4473faf563?auto=format&fit=crop&q=80&w=1200'
+      ],
+      Accommodation: [
+        'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200',
+        'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&q=80&w=1200'
+      ],
+      Transportation: [
+        'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=1200',
+        'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&q=80&w=1200'
+      ],
+      Activity: [
+        'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&q=80&w=1200',
+        'https://images.unsplash.com/photo-1530789253388-582c481c54b0?auto=format&fit=crop&q=80&w=1200'
+      ]
+    };
+
+    const categoryList = fallbacks[category] || [
+      'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&q=80&w=1200'
+    ];
+
+    return categoryList[0];
   };
 
   const formatDate = (dateString?: string) => {
@@ -65,6 +82,10 @@ const BookingCard: React.FC<BookingCardProps> = ({
           src={getCategoryImage(booking.category)} 
           alt={booking.title} 
           className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.src = 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&q=80&w=1200';
+          }}
         />
         <div className="absolute inset-0 bg-black/10"></div>
         <div className="absolute top-6 left-6">
@@ -92,10 +113,32 @@ const BookingCard: React.FC<BookingCardProps> = ({
             <p className="text-xl font-bold text-muted-foreground flex items-center">
               <MapPin className="w-5 h-5 mr-3 text-primary/60" />
               {booking.location || 'No location set'}
+              {booking.address && (
+                <span className="ml-2 text-slate-300 dark:text-slate-600 font-medium text-sm">• {booking.address}</span>
+              )}
             </p>
+            {booking.description && (
+               <div className="mt-4 flex items-center gap-3">
+                  <div className="px-3 py-1 bg-primary/5 border border-primary/10 rounded-lg">
+                     <span className="text-[10px] font-black text-primary uppercase tracking-widest">
+                        {booking.category === BookingCategory.Flight ? 'Seat' : 
+                         booking.category === BookingCategory.Accommodation ? 'Room' : 
+                         booking.category === BookingCategory.Transportation ? 'Vehicle' : 
+                         'Detail'}: {booking.description}
+                     </span>
+                  </div>
+                  {booking.contactInfo && (
+                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        {booking.contactInfo}
+                     </span>
+                  )}
+               </div>
+            )}
           </div>
           <div className="text-left lg:text-right">
-            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Confirmation No.</p>
+            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">
+               {booking.category === BookingCategory.Flight ? 'Flight Number' : 'Confirmation No.'}
+            </p>
             <p className="text-2xl font-black text-primary tracking-tight leading-none">{booking.confirmationCode || 'N/A'}</p>
           </div>
         </div>
@@ -106,26 +149,45 @@ const BookingCard: React.FC<BookingCardProps> = ({
               <Calendar className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Date</p>
+              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                {booking.category === BookingCategory.Accommodation ? 'Check-in' : 
+                 booking.category === BookingCategory.Activity ? 'Event Date' : 'Departure'}
+              </p>
               <p className="text-sm font-black text-foreground">{formatDate(booking.startDate)}</p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-card flex items-center justify-center shadow-sm">
-              <Clock3 className="w-6 h-6 text-primary" />
+          
+          {booking.category === BookingCategory.Accommodation ? (
+            <div className="flex items-center gap-4 border-l border-slate-200 dark:border-white/10 pl-12">
+               <div className="w-12 h-12 rounded-2xl bg-card flex items-center justify-center shadow-sm">
+                  <Clock3 className="w-6 h-6 text-primary" />
+               </div>
+               <div>
+                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Check-out</p>
+                  <p className="text-sm font-black text-foreground">{formatDate(booking.endDate)}</p>
+               </div>
             </div>
-            <div>
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Time</p>
-              <p className="text-sm font-black text-foreground">{formatTime(booking.startDate)}</p>
+          ) : (
+            <div className="flex items-center gap-4 border-l border-slate-200 dark:border-white/10 pl-12">
+               <div className="w-12 h-12 rounded-2xl bg-card flex items-center justify-center shadow-sm">
+                  <Clock3 className="w-6 h-6 text-primary" />
+               </div>
+               <div>
+                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Time</p>
+                  <p className="text-sm font-black text-foreground">{formatTime(booking.startDate)}</p>
+               </div>
             </div>
-          </div>
+          )}
+
           {booking.cost && (
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 border-l border-slate-200 dark:border-white/10 pl-12">
               <div className="w-12 h-12 rounded-2xl bg-card flex items-center justify-center shadow-sm">
                 <span className="text-lg font-black text-primary">{booking.currency === 'EUR' ? '€' : '$'}</span>
               </div>
               <div>
-                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Cost</p>
+                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                   {booking.category === BookingCategory.Accommodation ? 'Total Stay' : 'Incurred Cost'}
+                </p>
                 <p className="text-sm font-black text-foreground">{booking.cost} {booking.currency}</p>
               </div>
             </div>

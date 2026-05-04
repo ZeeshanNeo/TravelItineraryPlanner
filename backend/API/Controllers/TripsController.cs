@@ -107,4 +107,12 @@ public class TripsController : ControllerBase
             return NotFound();
         }
     }
+    
+    [HttpGet("statistics")]
+    public async Task<ActionResult<GlobalStatisticsResponse>> GetStatistics(CancellationToken cancellationToken)
+    {
+        var userId = GetUserId();
+        var response = await _tripService.GetGlobalStatisticsAsync(userId, cancellationToken);
+        return Ok(response);
+    }
 }

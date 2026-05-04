@@ -144,7 +144,7 @@ const Bookings = () => {
                 onClick={() => setFilter(f)}
                 className={`px-8 py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-all border ${
                   filter === f 
-                    ? 'bg-primary text-white border-primary shadow-xl shadow-primary/20' 
+                    ? 'bg-slate-900 text-white border-slate-900 shadow-xl shadow-slate-900/20' 
                     : 'bg-card text-muted-foreground border-border hover:border-border shadow-sm'
                 }`}
               >
@@ -231,6 +231,7 @@ const Bookings = () => {
               setShowForm(false);
               setEditingBooking(undefined);
             }}
+            tripId={tripId}
           />
         </div>
       )}

@@ -4,11 +4,16 @@ export const ActivityType = {
   Flight: 0,
   Accommodation: 1,
   Transportation: 2,
-  Food: 3,
-  Sightseeing: 4,
+  Sightseeing: 3,
+  Dining: 4,
   Shopping: 5,
   Entertainment: 6,
-  Other: 7
+  Meeting: 7,
+  Relaxation: 8,
+  Hiking: 9,
+  Museum: 10,
+  Beach: 11,
+  Other: 12
 } as const;
 
 export type ActivityTypeEnum = typeof ActivityType[keyof typeof ActivityType];

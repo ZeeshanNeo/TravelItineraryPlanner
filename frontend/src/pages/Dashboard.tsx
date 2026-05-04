@@ -18,27 +18,33 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<'active' | 'upcoming' | 'archived'>('active');
   const [editingTrip, setEditingTrip] = useState<TripResponse | null>(null);
+  const [stats, setStats] = useState<any>(null);
   const { searchQuery } = useSearch();
 
   useEffect(() => {
-    fetchTrips();
+    fetchData();
   }, [filter]);
 
-  const fetchTrips = async () => {
+  const fetchData = async () => {
     setIsLoading(true);
     try {
-      const data = await tripService.getTrips(filter === 'archived');
-      let filtered = data;
+      const [tripsData, statsData] = await Promise.all([
+        tripService.getTrips(filter === 'archived'),
+        tripService.getStatistics()
+      ]);
+      
+      let filtered = tripsData;
       if (filter === 'archived') {
-        filtered = data.filter(t => t.isArchived);
+        filtered = tripsData.filter(t => t.isArchived);
       } else if (filter === 'active') {
-        filtered = data.filter(t => !t.isArchived);
+        filtered = tripsData.filter(t => !t.isArchived);
       } else if (filter === 'upcoming') {
-        filtered = data.filter(t => !t.isArchived && new Date(t.startDate) > new Date());
+        filtered = tripsData.filter(t => !t.isArchived && new Date(t.startDate) > new Date());
       }
       setTrips(filtered);
+      setStats(statsData);
     } catch (error) {
-      console.error('Failed to fetch trips', error);
+      console.error('Failed to fetch dashboard data', error);
     } finally {
       setIsLoading(false);
     }
@@ -61,7 +67,7 @@ const Dashboard = () => {
   const handleArchive = async (id: string, currentlyArchived: boolean) => {
     try {
       await tripService.archiveTrip(id, !currentlyArchived);
-      fetchTrips();
+      fetchData();
     } catch (error) {
       console.error('Failed to archive trip', error);
     }
@@ -71,7 +77,7 @@ const Dashboard = () => {
     if (window.confirm('Are you sure you want to delete this journey? This action cannot be undone.')) {
       try {
         await tripService.deleteTrip(id);
-        fetchTrips();
+        fetchData();
       } catch (error) {
         console.error('Failed to delete trip', error);
       }
@@ -233,27 +239,19 @@ const Dashboard = () => {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 pt-12 border-t border-slate-100">
            <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm enterprise-surface">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Total Trips</p>
-              <p className="text-5xl font-black text-blue-600">{trips.length}</p>
+              <p className="text-5xl font-black text-blue-600">{stats?.totalTrips || trips.length}</p>
            </div>
            <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm enterprise-surface">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Countries Visited</p>
-              <p className="text-5xl font-black text-blue-600">{new Set(trips.map(t => t.destination.split(',').pop()?.trim())).size}</p>
+              <p className="text-5xl font-black text-blue-600">{stats?.countriesVisited || '0'}</p>
            </div>
            <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm enterprise-surface">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Travel Days</p>
-              <p className="text-5xl font-black text-blue-600">
-                {trips.reduce((acc, t) => {
-                  const start = new Date(t.startDate);
-                  const end = new Date(t.endDate);
-                  const diffTime = Math.abs(end.getTime() - start.getTime());
-                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-                  return acc + diffDays;
-                }, 0)}
-              </p>
+              <p className="text-5xl font-black text-blue-600">{stats?.totalTravelDays || '0'}</p>
            </div>
            <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm enterprise-surface">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Exp. Savings</p>
-              <p className="text-5xl font-black text-blue-600">${(trips.length * 0.4).toFixed(1)}k</p>
+              <p className="text-5xl font-black text-blue-600">${stats ? (stats.totalSpend / 10).toFixed(1) : '0.0'}k</p>
            </div>
         </div>
 
@@ -263,7 +261,7 @@ const Dashboard = () => {
             onClose={() => setEditingTrip(null)} 
             onSuccess={() => {
               setEditingTrip(null);
-              fetchTrips();
+              fetchData();
             }} 
           />
         )}

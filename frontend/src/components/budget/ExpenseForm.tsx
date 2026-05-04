@@ -109,7 +109,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ tripId, expense, onSave, onCl
                 required
                 className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                 value={formData.amount}
-                onChange={e => setFormData({ ...formData, amount: parseFloat(e.target.value) })}
+                onChange={e => setFormData({ ...formData, amount: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
               />
             </div>
 
@@ -139,7 +139,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ tripId, expense, onSave, onCl
                   required
                   className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                   value={formData.exchangeRate}
-                  onChange={e => setFormData({ ...formData, exchangeRate: parseFloat(e.target.value) })}
+                  onChange={e => setFormData({ ...formData, exchangeRate: e.target.value === '' ? 1 : parseFloat(e.target.value) })}
                 />
               </div>
             )}

@@ -7,16 +7,12 @@ interface SortableActivityCardProps {
   activity: ActivityResponse;
   onEdit?: (activity: ActivityResponse) => void;
   onDelete?: (activityId: string) => void;
-  isDragging?: boolean;
-  order: number;
 }
 
 const SortableActivityCard = ({
   activity,
   onEdit,
   onDelete,
-  isDragging = false,
-  order
 }: SortableActivityCardProps) => {
   const {
     attributes,
@@ -30,61 +26,32 @@ const SortableActivityCard = ({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isSortableDragging ? 0.5 : 1,
-    cursor: isSortableDragging ? 'grabbing' : 'grab'
+    opacity: isSortableDragging ? 0.3 : 1,
+    zIndex: isSortableDragging ? 50 : 1
   };
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`relative ${isDragging ? 'z-10' : ''}`}
+      className={`group relative transition-all ${isSortableDragging ? 'scale-95' : 'hover:translate-x-1'}`}
     >
-      <div className="flex items-start gap-4">
-        {/* Drag handle */}
-        <div
-          className="flex-shrink-0 mt-6 cursor-grab active:cursor-grabbing"
-          {...attributes}
-          {...listeners}
-        >
-          <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center hover:bg-slate-200 transition-colors">
-            <svg 
-              className="w-4 h-4 text-muted-foreground" 
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24" 
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                strokeWidth={2} 
-                d="M4 8h16M4 16h16"
-              />
-            </svg>
-          </div>
-        </div>
-
-        {/* Order indicator */}
-        <div className="flex-shrink-0 mt-6">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-            <span className="text-primary font-black text-sm">{order}</span>
-          </div>
-        </div>
-
-        {/* Activity card */}
-        <div className="flex-grow">
+      <div className="flex items-center gap-4">
+        {/* Activity content */}
+        <div className="flex-grow min-w-0">
           <ActivityCard
             activity={activity}
             onEdit={onEdit}
             onDelete={onDelete}
+            draggable={true}
+            dragHandleProps={{ ...attributes, ...listeners }}
           />
         </div>
       </div>
 
       {/* Visual feedback for dragging */}
       {isSortableDragging && (
-        <div className="absolute inset-0 bg-primary/5 rounded-2xl border-2 border-dashed border-primary/30" />
+        <div className="absolute inset-0 bg-primary/5 rounded-[2rem] border-2 border-dashed border-primary/20 pointer-events-none" />
       )}
     </div>
   );

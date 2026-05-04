@@ -17,7 +17,7 @@ import {
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import SortableActivityCard from './SortableActivityCard';
 import type { ActivityResponse } from '../../services/itinerary.service';
-import { Plus, List, BarChart3, Car } from 'lucide-react';
+import { Plus, List, BarChart3, Clock, Sparkles, ChevronRight, Car } from 'lucide-react';
 import Button from '../shared/Button';
 import { estimateTravelTime } from '../../utils/travelTime';
 
@@ -37,15 +37,18 @@ const Timeline = ({
   onActivityEdit, 
   onActivityDelete,
   onAddActivity,
-  dayTitle,
-  date
 }: TimelineProps) => {
   const [localActivities, setLocalActivities] = useState<ActivityResponse[]>(activities);
-  const [isDragging, setIsDragging] = useState(false);
-  const [viewMode, setViewMode] = useState<'list' | 'timeline'>('list');
+  const [viewMode, setViewMode] = useState<'timeline' | 'graph'>('timeline');
 
   useEffect(() => {
-    setLocalActivities(activities);
+    // Sort activities by start time for the timeline view
+    const sorted = [...activities].sort((a, b) => {
+        const timeA = a.startTime.includes('T') ? new Date(a.startTime).getTime() : 0;
+        const timeB = b.startTime.includes('T') ? new Date(b.startTime).getTime() : 0;
+        return timeA - timeB;
+    });
+    setLocalActivities(sorted);
   }, [activities]);
 
   const sensors = useSensors(
@@ -61,7 +64,6 @@ const Timeline = ({
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    setIsDragging(false);
 
     if (over && active.id !== over.id) {
       const oldIndex = localActivities.findIndex(activity => activity.id === active.id);
@@ -70,132 +72,84 @@ const Timeline = ({
       const newActivities = arrayMove(localActivities, oldIndex, newIndex);
       setLocalActivities(newActivities);
       
-      // Update order property for each activity
-      const updatedActivities = newActivities.map((activity, index) => ({
-        ...activity,
-        order: index
-      }));
-      
-      // Call the callback with new order
       if (onActivitiesReorder) {
-        onActivitiesReorder(updatedActivities.map(activity => activity.id));
+        onActivitiesReorder(newActivities.map(activity => activity.id));
       }
     }
   };
 
   const handleDragStart = () => {
-    setIsDragging(true);
   };
 
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric'
-    });
+  const formatTime = (timeString: string) => {
+    if (!timeString) return '09:00 AM';
+    const date = new Date(timeString);
+    if (isNaN(date.getTime())) return timeString;
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  // Helper function to convert time string to hours for timeline positioning
-  const timeToPosition = (timeString: string) => {
-    const [hours, minutes] = timeString.split(':').map(Number);
-    return hours + minutes / 60;
-  };
-
-  // Calculate activity duration in hours
-  const calculateDuration = (startTime: string, endTime: string) => {
-    const startPos = timeToPosition(startTime);
-    const endPos = timeToPosition(endTime);
-    return Math.max(0.5, endPos - startPos); // Minimum 0.5 hour for visibility
-  };
-
-  // Get color based on activity type
-  const getActivityColor = (activityType: string) => {
-    switch (activityType.toLowerCase()) {
-      case 'flight': return 'bg-blue-500';
-      case 'accommodation': return 'bg-purple-500';
-      case 'transportation': return 'bg-indigo-500';
-      case 'food': return 'bg-emerald-500';
-      case 'sightseeing': return 'bg-amber-500';
-      case 'shopping': return 'bg-pink-500';
-      case 'entertainment': return 'bg-red-500';
-      default: return 'bg-muted0';
+  const getActivityStyles = (activityType: string) => {
+    const type = activityType.toLowerCase();
+    switch (true) {
+      case type.includes('flight'): 
+        return { accent: '#3b82f6', iconBg: 'bg-blue-500/10' };
+      case type.includes('hotel') || type.includes('accommodation'): 
+        return { accent: '#a855f7', iconBg: 'bg-purple-500/10' };
+      case type.includes('food') || type.includes('restaurant'): 
+        return { accent: '#10b981', iconBg: 'bg-emerald-500/10' };
+      default: 
+        return { accent: '#6366f1', iconBg: 'bg-indigo-500/10' };
     }
   };
 
   return (
-    <div className="space-y-8">
-      {(dayTitle || date) && (
-        <div className="bg-gradient-to-r from-primary to-primary/80 rounded-2xl p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-black">{dayTitle || 'Day Timeline'}</h2>
-              {date && (
-                <p className="text-primary-100 mt-2 font-medium">{formatDate(date)}</p>
-              )}
-            </div>
-            <div className="text-right">
-              <p className="text-3xl font-black">{localActivities.length}</p>
-              <p className="text-primary-100 text-sm font-medium uppercase tracking-widest">Activities</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h3 className="text-xl font-black text-foreground">Daily Schedule</h3>
-            <div className="flex bg-muted rounded-2xl p-1">
-              <button
-                onClick={() => setViewMode('list')}
-                className={`px-4 py-2 rounded-xl font-black uppercase tracking-widest text-sm transition-all ${viewMode === 'list' ? 'bg-card text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
-              >
-                <List className="w-4 h-4 inline mr-2" />
-                List
-              </button>
-              <button
-                onClick={() => setViewMode('timeline')}
-                className={`px-4 py-2 rounded-xl font-black uppercase tracking-widest text-sm transition-all ${viewMode === 'timeline' ? 'bg-card text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
-              >
-                <BarChart3 className="w-4 h-4 inline mr-2" />
-                Timeline
-              </button>
-            </div>
-          </div>
-          {onAddActivity && (
-            <Button
-              variant="primary"
-              onClick={onAddActivity}
-              className="rounded-2xl px-6 py-3 font-black uppercase tracking-widest"
+    <div className="space-y-8 w-full max-w-full">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 px-2">
+        <div className="flex items-center gap-4">
+          <div className="flex bg-slate-100 dark:bg-slate-900/50 p-1 rounded-2xl border border-slate-200 dark:border-white/5">
+            <button
+              onClick={() => setViewMode('timeline')}
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all ${viewMode === 'timeline' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
             >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Activity
-            </Button>
-          )}
-        </div>
-
-        {localActivities.length === 0 ? (
-          <div className="bg-card rounded-2xl p-12 text-center border-2 border-dashed border-border">
-            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
-              <Plus className="w-8 h-8 text-muted-foreground" />
-            </div>
-            <h3 className="text-xl font-black text-foreground mb-3">No activities planned</h3>
-            <p className="text-muted-foreground mb-6">Add your first activity to start building your itinerary</p>
-            {onAddActivity && (
-              <Button
-                variant="primary"
-                onClick={onAddActivity}
-                className="rounded-2xl px-8 py-4 font-black uppercase tracking-widest"
-              >
-                <Plus className="w-5 h-5 mr-2" />
-                Create First Activity
-              </Button>
-            )}
+              <List className="w-3.5 h-3.5" />
+              Timeline
+            </button>
+            <button
+              onClick={() => setViewMode('graph')}
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all ${viewMode === 'graph' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+            >
+              <BarChart3 className="w-3.5 h-3.5" />
+              Graph
+            </button>
           </div>
-        ) : viewMode === 'list' ? (
+        </div>
+        
+        {onAddActivity && (
+          <Button
+            variant="primary"
+            onClick={onAddActivity}
+            className="rounded-2xl px-8 py-4 font-black uppercase tracking-[0.1em] text-[11px] shadow-xl shadow-primary/20"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Experience
+          </Button>
+        )}
+      </div>
+
+      {localActivities.length === 0 ? (
+        <div className="py-24 text-center bg-slate-50 dark:bg-slate-900/20 rounded-[3rem] border-2 border-dashed border-slate-200 dark:border-slate-800">
+          <div className="w-20 h-20 bg-white dark:bg-slate-800 rounded-[2rem] shadow-sm flex items-center justify-center mx-auto mb-6">
+            <Sparkles size={32} className="text-slate-200" />
+          </div>
+          <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">No Experiences Yet</h3>
+          <p className="text-slate-400 text-sm font-bold uppercase tracking-widest mb-8">Ready to map your journey?</p>
+          <Button variant="primary" onClick={onAddActivity} className="rounded-xl px-8 py-3 text-xs uppercase tracking-widest">+ Create Activity</Button>
+        </div>
+      ) : viewMode === 'timeline' ? (
+        <div className="relative pl-4 md:pl-24 pr-2">
+          {/* Main Timeline Line */}
+          <div className="absolute left-[30px] md:left-[118px] top-8 bottom-8 w-0.5 bg-slate-100 dark:bg-slate-800" />
+
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -207,179 +161,131 @@ const Timeline = ({
               items={localActivities.map(activity => activity.id)}
               strategy={verticalListSortingStrategy}
             >
-              <div className="space-y-0">
-                {localActivities.map((activity, index) => (
-                  <div key={activity.id}>
-                    {index > 0 && (
-                      <div className="flex items-center gap-4 ml-12 py-2">
-                        <div className="w-0.5 h-12 bg-slate-200 ml-5" />
-                        <div className="flex items-center gap-2 text-[10px] font-black text-muted-foreground uppercase tracking-widest bg-muted px-3 py-1 rounded-full border border-border">
-                          <Car size={12} />
-                          Travel: {estimateTravelTime(localActivities[index-1].location, activity.location)} min
+              <div className="space-y-12">
+                {localActivities.map((activity, index) => {
+                  const transitTime = index > 0 ? estimateTravelTime(localActivities[index-1].location, activity.location) : 0;
+                  
+                  return (
+                    <div key={activity.id} className="relative">
+                      {/* Transit Indicator */}
+                      {index > 0 && (
+                        <div className="absolute -top-10 left-[8px] md:left-[96px] right-0 flex items-center justify-center md:justify-start pointer-events-none z-20">
+                           <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/10 rounded-full px-4 py-1.5 flex items-center gap-3 shadow-sm md:ml-[-10px]">
+                              <div className="w-5 h-5 bg-indigo-50 dark:bg-indigo-500/10 rounded-full flex items-center justify-center">
+                                 <ChevronRight size={10} className="text-indigo-500 rotate-90" />
+                              </div>
+                              <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">
+                                {transitTime} min transit
+                              </span>
+                           </div>
                         </div>
+                      )}
+
+                      {/* Time Marker */}
+                      <div className="absolute left-[-10px] md:left-[-90px] top-6 flex items-center gap-4 z-10">
+                        <span className="hidden md:block text-[11px] font-black text-slate-400 uppercase tracking-widest w-16 text-right">
+                           {formatTime(activity.startTime)}
+                        </span>
+                        <div className="w-5 h-5 rounded-full border-4 border-white dark:border-slate-900 bg-indigo-500 shadow-[0_0_0_4px_rgba(99,102,241,0.1)] shrink-0" />
                       </div>
-                    )}
-                    <SortableActivityCard
-                      activity={activity}
-                      onEdit={onActivityEdit}
-                      onDelete={onActivityDelete}
-                      isDragging={isDragging}
-                      order={index + 1}
-                    />
-                  </div>
-                ))}
+
+                      <div className="ml-12 md:ml-12">
+                        <SortableActivityCard
+                          activity={activity}
+                          onEdit={onActivityEdit}
+                          onDelete={onActivityDelete}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Drop Target Placeholder */}
+                <div className="relative ml-12 md:ml-12 opacity-40 hover:opacity-100 transition-opacity group">
+                   <div className="absolute left-[-42px] md:left-[-102px] top-1/2 -translate-y-1/2 w-5 h-5 rounded-full border-2 border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900" />
+                   <div 
+                     className="border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-[2rem] p-8 flex items-center justify-center cursor-pointer group-hover:border-indigo-500/50 group-hover:bg-indigo-500/5 transition-all"
+                     onClick={onAddActivity}
+                   >
+                      <div className="flex flex-col items-center gap-3">
+                         <div className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-300 group-hover:text-indigo-500 transition-colors">
+                            <Plus size={20} />
+                         </div>
+                         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 group-hover:text-indigo-500 transition-colors">Drop activity here to reschedule</span>
+                      </div>
+                   </div>
+                </div>
               </div>
             </SortableContext>
           </DndContext>
-        ) : (
-          // Visual Timeline View
-          <div className="bg-card rounded-2xl p-6 border border-border">
-            <div className="mb-6">
-              <h4 className="text-lg font-black text-foreground mb-4">24-Hour Timeline</h4>
-              <div className="relative h-8 bg-muted rounded-full">
-                {Array.from({ length: 24 }).map((_, hour) => (
-                  <div key={hour} className="absolute top-0 bottom-0 w-px bg-slate-300" style={{ left: `${(hour / 24) * 100}%` }}>
-                    <span className="absolute -top-6 text-xs text-muted-foreground font-medium" style={{ left: '-10px' }}>
-                      {hour === 0 ? '12 AM' : hour === 12 ? '12 PM' : hour > 12 ? `${hour - 12} PM` : `${hour} AM`}
+        </div>
+      ) : (
+        // Simplified Grid Graph Mode
+        <div className="premium-glass bg-white dark:bg-slate-900/50 rounded-[3rem] p-6 md:p-10 shadow-2xl border border-slate-100 dark:border-white/5 relative overflow-hidden">
+           <div className="relative flex gap-6 md:gap-12 min-h-[500px]">
+              <div className="w-12 space-y-0 pt-10 shrink-0 border-r border-slate-100 dark:border-white/5">
+                {Array.from({ length: 25 }).map((_, hour) => (
+                  <div key={hour} className="h-12 flex items-start justify-end pr-4">
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest opacity-60">
+                      {hour === 0 ? '12A' : hour === 12 ? '12P' : hour > 12 ? `${hour - 12}P` : `${hour}A`}
                     </span>
                   </div>
                 ))}
               </div>
-            </div>
-            
-            <div className="relative h-96 bg-muted rounded-2xl border border-border p-4">
-              {localActivities.map((activity, index) => {
-                const startPos = timeToPosition(activity.startTime);
-                const duration = calculateDuration(activity.startTime, activity.endTime);
-                const topPosition = (startPos / 24) * 100;
-                const height = (duration / 24) * 100;
-                
-                return (
-                  <div
-                    key={activity.id}
-                    className={`absolute rounded-xl p-4 shadow-md border ${getActivityColor(activity.activityType)} border-white text-white`}
-                    style={{
-                      left: '10px',
-                      right: '10px',
-                      top: `${topPosition}%`,
-                      height: `${height}%`,
-                      minHeight: '40px',
-                      zIndex: 10 - index
-                    }}
-                    onClick={() => onActivityEdit?.(activity)}
-                  >
-                    <div className="flex items-center justify-between h-full">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-black">{activity.title}</span>
-                          {activity.isFlexible && (
-                            <span className="text-xs bg-white/30 px-2 py-1 rounded-full font-black">Flexible</span>
-                          )}
-                        </div>
-                        <div className="text-sm opacity-90 mt-1">
-                          {activity.startTime} - {activity.endTime}
-                          {activity.travelTimeMinutes && (
-                            <span className="ml-2">(+{activity.travelTimeMinutes}min travel)</span>
-                          )}
-                        </div>
-                        {activity.location && (
-                          <div className="text-sm opacity-80 mt-1">{activity.location}</div>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        <div className="text-lg font-black">{activity.activityType}</div>
-                        {activity.cost !== undefined && (
-                          <div className="text-sm opacity-90">
-                            {new Intl.NumberFormat('en-US', {
-                              style: 'currency',
-                              currency: activity.currency || 'USD',
-                              minimumFractionDigits: 0
-                            }).format(activity.cost)}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-              
-              {/* Time markers */}
-              {Array.from({ length: 25 }).map((_, hour) => (
-                <div
-                  key={hour}
-                  className="absolute w-full h-px bg-slate-300/50"
-                  style={{ top: `${(hour / 24) * 100}%` }}
-                >
-                  <span className="absolute left-0 -ml-12 text-xs text-muted-foreground font-medium">
-                    {hour === 0 ? '12 AM' : hour === 12 ? '12 PM' : hour > 12 ? `${hour - 12} PM` : `${hour} AM`}
-                  </span>
-                </div>
-              ))}
-            </div>
-            
-            <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-muted rounded-2xl">
-                <div className="text-2xl font-black text-foreground">
-                  {localActivities.length}
-                </div>
-                <div className="text-sm text-muted-foreground font-medium uppercase tracking-widest mt-2">Total Activities</div>
-              </div>
-              <div className="text-center p-4 bg-muted rounded-2xl">
-                <div className="text-2xl font-black text-foreground">
-                  {localActivities.filter(a => a.travelTimeMinutes && a.travelTimeMinutes > 0).length}
-                </div>
-                <div className="text-sm text-muted-foreground font-medium uppercase tracking-widest mt-2">With Travel Time</div>
-              </div>
-              <div className="text-center p-4 bg-muted rounded-2xl">
-                <div className="text-2xl font-black text-foreground">
-                  {localActivities.filter(a => a.isFlexible).length}
-                </div>
-                <div className="text-sm text-muted-foreground font-medium uppercase tracking-widest mt-2">Flexible</div>
-              </div>
-              <div className="text-center p-4 bg-muted rounded-2xl">
-                <div className="text-2xl font-black text-foreground">
-                  {new Intl.NumberFormat('en-US', {
-                    style: 'currency',
-                    currency: 'USD',
-                    minimumFractionDigits: 0
-                  }).format(localActivities.reduce((total, activity) => total + (activity.cost || 0), 0))}
-                </div>
-                <div className="text-sm text-muted-foreground font-medium uppercase tracking-widest mt-2">Total Cost</div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+              <div className="flex-1 relative mt-10">
+                 {Array.from({ length: 25 }).map((_, hour) => (
+                    <div key={hour} className="absolute w-full h-px bg-slate-100 dark:bg-white/5" style={{ top: `${(hour / 24) * 100}%` }} />
+                 ))}
+                 {localActivities.map((activity, index) => {
+                    const startH = new Date(activity.startTime).getHours();
+                    const startM = new Date(activity.startTime).getMinutes();
+                    const endH = new Date(activity.endTime).getHours();
+                    const endM = new Date(activity.endTime).getMinutes();
+                    
+                    const startPos = (startH + startM / 60) / 24 * 100;
+                    const endPos = (endH + endM / 60) / 24 * 100;
+                    const duration = Math.max(endPos - startPos, 2);
+                    const styles = getActivityStyles(activity.activityType);
 
-      {localActivities.length > 0 && (
-        <div className="bg-muted rounded-2xl p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center">
-              <p className="text-3xl font-black text-foreground">
-                {localActivities.filter(a => a.activityType.toLowerCase() === 'flight').length}
-              </p>
-              <p className="text-muted-foreground text-sm font-medium uppercase tracking-widest mt-2">Flights</p>
-            </div>
-            <div className="text-center">
-              <p className="text-3xl font-black text-foreground">
-                {localActivities.filter(a => a.activityType.toLowerCase() === 'accommodation').length}
-              </p>
-              <p className="text-muted-foreground text-sm font-medium uppercase tracking-widest mt-2">Accommodations</p>
-            </div>
-            <div className="text-center">
-              <p className="text-3xl font-black text-foreground">
-                {localActivities.reduce((total, activity) => total + (activity.cost || 0), 0).toLocaleString('en-US', {
-                  style: 'currency',
-                  currency: 'USD',
-                  minimumFractionDigits: 0,
-                  maximumFractionDigits: 0
-                })}
-              </p>
-              <p className="text-muted-foreground text-sm font-medium uppercase tracking-widest mt-2">Total Cost</p>
-            </div>
-          </div>
+                    return (
+                      <div 
+                        key={activity.id}
+                        className="absolute left-4 right-4 rounded-2xl p-4 shadow-xl border-l-4 transition-all hover:scale-[1.02] cursor-pointer group backdrop-blur-md"
+                        style={{
+                          top: `${startPos}%`,
+                          height: `${duration}%`,
+                          backgroundColor: `${styles.accent}15`,
+                          borderColor: styles.accent,
+                          zIndex: 10 + index
+                        }}
+                        onClick={() => onActivityEdit?.(activity)}
+                      >
+                         <div className="flex items-center justify-between">
+                            <h4 className="text-sm font-black tracking-tight truncate" style={{ color: styles.accent }}>{activity.title}</h4>
+                            <span className="text-[9px] font-black uppercase opacity-60" style={{ color: styles.accent }}>{formatTime(activity.startTime)}</span>
+                         </div>
+                      </div>
+                    );
+                 })}
+              </div>
+           </div>
         </div>
       )}
+
+      {/* Day Footer Summary */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-2">
+         {[
+           { label: 'Activities', value: localActivities.length, icon: List },
+           { label: 'In Transit', value: `${localActivities.length > 1 ? (localActivities.length - 1) * 15 : 0}m`, icon: Car },
+           { label: 'Budget', value: `$${localActivities.reduce((s, a) => s + (a.cost || 0), 0)}`, icon: Clock },
+           { label: 'Status', value: 'Ready', icon: Sparkles },
+         ].map((stat, i) => (
+           <div key={i} className="bg-slate-50 dark:bg-slate-900/50 p-6 rounded-[2rem] border border-slate-100 dark:border-white/5 text-center">
+              <p className="text-2xl font-black text-slate-900 dark:text-white">{stat.value}</p>
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-2">{stat.label}</p>
+           </div>
+         ))}
+      </div>
     </div>
   );
 };

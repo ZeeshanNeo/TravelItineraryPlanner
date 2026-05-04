@@ -1,10 +1,13 @@
 import api from './api';
 
 export const TravelType = {
-  Leisure: 0,
-  Business: 1,
+  Business: 0,
+  Leisure: 1,
   Family: 2,
-  Solo: 3
+  Solo: 3,
+  Adventure: 4,
+  Romantic: 5,
+  Other: 6
 } as const;
 
 export type TravelTypeEnum = typeof TravelType[keyof typeof TravelType];
@@ -65,6 +68,11 @@ class TripService {
 
   async deleteTrip(id: string): Promise<void> {
     await api.delete(`/trips/${id}`);
+  }
+
+  async getStatistics(): Promise<any> {
+    const response = await api.get('/trips/statistics');
+    return response.data;
   }
 }
 

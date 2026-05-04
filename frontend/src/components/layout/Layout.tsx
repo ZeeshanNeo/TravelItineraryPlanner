@@ -81,16 +81,15 @@ const Layout = ({ children, showNav = true }: LayoutProps) => {
     <div className="bg-background text-foreground font-body-md min-h-screen flex flex-col md:flex-row overflow-hidden transition-colors duration-500">
       {/* SideNavBar / Mobile Drawer */}
       <aside
-        className={`flex flex-col z-50 bg-card border-r border-border shadow-[0_0_50px_rgba(0,0,0,0.1)] transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-          isSmallScreen
+        className={`flex flex-col z-50 bg-card border-r border-border shadow-[0_0_50px_rgba(0,0,0,0.1)] transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${isSmallScreen
             ? `fixed left-0 top-0 h-full w-80 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
             : `relative h-screen shrink-0 ${isCollapsed ? 'w-24' : 'w-80'}`
-        }`}
+          }`}
       >
         {/* Branding Area */}
         <div className={`h-28 flex items-center ${isCollapsed && !isSmallScreen ? 'justify-center' : 'px-8 justify-between'} shrink-0`}>
           <div className="flex items-center gap-4 group cursor-pointer" onClick={() => navigate('/dashboard')}>
-            <div className={`motion-float flex items-center justify-center bg-primary text-primary-foreground shadow-2xl shadow-primary/40 transition-all duration-500 group-hover:scale-110 
+            <div className={`motion-float flex items-center justify-center bg-primary text-primary-foreground shadow-[0_10px_25px_rgba(0,0,0,0.8)] transition-all duration-500 group-hover:scale-110 
               ${isCollapsed && !isSmallScreen ? 'w-12 h-12 rounded-xl' : 'w-14 h-14 rounded-2xl rotate-[-6deg]'}`}>
               <Plane className={`transition-transform duration-500 ${isCollapsed && !isSmallScreen ? 'w-6 h-6' : 'w-7 h-7 -rotate-45 group-hover:rotate-0'}`} />
             </div>
@@ -116,7 +115,7 @@ const Layout = ({ children, showNav = true }: LayoutProps) => {
           </p>
 
           {isTripContext && !isCollapsed && (
-            <button 
+            <button
               onClick={() => navigate('/dashboard')}
               className="mx-4 mb-6 flex items-center gap-3 px-4 py-3 bg-secondary/50 rounded-xl text-xs font-black text-primary uppercase tracking-widest hover:bg-secondary transition-all group"
             >
@@ -124,7 +123,7 @@ const Layout = ({ children, showNav = true }: LayoutProps) => {
               Return to All Trips
             </button>
           )}
-          
+
           {navItems.map((item) => {
             const isActive = location.pathname === item.path || (item.path !== '/dashboard' && location.pathname.startsWith(item.path));
             return (
@@ -133,8 +132,8 @@ const Layout = ({ children, showNav = true }: LayoutProps) => {
                 to={item.path}
                 onClick={() => isSmallScreen && setIsSidebarOpen(false)}
                 className={`flex items-center gap-4 h-14 rounded-2xl transition-all duration-300 group relative
-                  ${isActive 
-                    ? 'bg-secondary text-slate-950 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)]' 
+                  ${isActive
+                    ? 'bg-secondary text-slate-950 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)]'
                     : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'} 
                   ${isCollapsed && !isSmallScreen ? 'justify-center px-0' : 'px-5'}`}
                 title={isCollapsed && !isSmallScreen ? item.name : ''}
@@ -154,33 +153,33 @@ const Layout = ({ children, showNav = true }: LayoutProps) => {
           })}
 
           <div className="pt-10">
-             <p className={`px-4 text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.3em] mb-6 transition-all duration-300
+            <p className={`px-4 text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.3em] mb-6 transition-all duration-300
                ${isCollapsed && !isSmallScreen ? 'opacity-0 scale-0' : 'opacity-100 scale-100'}`}>
-               Management
-             </p>
-             {[
-               { name: 'Profile', path: '/profile', icon: User },
-               { name: 'Settings', path: '/settings', icon: Settings }
-             ].map((item) => {
-               const isActive = location.pathname === item.path;
-               return (
-                 <Link
-                   key={item.name}
-                   to={item.path}
-                   className={`flex items-center gap-4 h-14 rounded-2xl transition-all duration-300 group relative mb-2
-                     ${isActive 
-                       ? 'bg-secondary text-slate-950 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)]' 
-                       : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'} 
+              Management
+            </p>
+            {[
+              { name: 'Profile', path: '/profile', icon: User },
+              { name: 'Settings', path: '/settings', icon: Settings }
+            ].map((item) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <Link
+                  key={item.name}
+                  to={item.path}
+                  className={`flex items-center gap-4 h-14 rounded-2xl transition-all duration-300 group relative mb-2
+                     ${isActive
+                      ? 'bg-secondary text-slate-950 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)]'
+                      : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'} 
                      ${isCollapsed && !isSmallScreen ? 'justify-center px-0' : 'px-5'}`}
-                   title={isCollapsed && !isSmallScreen ? item.name : ''}
-                 >
-                   <item.icon size={22} className={`enterprise-icon ${isActive ? 'scale-110 text-primary' : ''}`} />
-                   {(!isCollapsed || isSmallScreen) && (
-                     <span className={`text-sm font-black tracking-tight animate-fade-in ${isActive ? 'text-slate-950' : ''}`}>{item.name}</span>
-                   )}
-                 </Link>
-               );
-             })}
+                  title={isCollapsed && !isSmallScreen ? item.name : ''}
+                >
+                  <item.icon size={22} className={`enterprise-icon ${isActive ? 'scale-110 text-primary' : ''}`} />
+                  {(!isCollapsed || isSmallScreen) && (
+                    <span className={`text-sm font-black tracking-tight animate-fade-in ${isActive ? 'text-slate-950' : ''}`}>{item.name}</span>
+                  )}
+                </Link>
+              );
+            })}
           </div>
         </nav>
 
@@ -204,8 +203,8 @@ const Layout = ({ children, showNav = true }: LayoutProps) => {
             </button>
           )}
 
-          <button 
-            onClick={handleLogout} 
+          <button
+            onClick={handleLogout}
             className={`flex items-center gap-4 h-14 w-full rounded-2xl text-muted-foreground hover:bg-red-500/10 hover:text-red-500 transition-all duration-300 font-bold text-sm ${isCollapsed && !isSmallScreen ? 'justify-center' : 'px-5'}`}
             title={isCollapsed && !isSmallScreen ? 'Logout' : ''}
           >
@@ -228,17 +227,17 @@ const Layout = ({ children, showNav = true }: LayoutProps) => {
         {/* Cinematic Header */}
         <header className="min-h-24 md:h-28 flex items-center justify-between gap-4 px-4 sm:px-6 md:px-10 shrink-0 bg-background/80 backdrop-blur-xl border-b border-border/40 z-40">
           <div className="flex items-center gap-3 md:gap-6 flex-1 min-w-0">
-            <button 
-              onClick={isSmallScreen ? toggleSidebar : toggleCollapse} 
+            <button
+              onClick={isSmallScreen ? toggleSidebar : toggleCollapse}
               className="p-3.5 rounded-2xl bg-secondary text-foreground shadow-sm border border-border hover:bg-accent transition-all active:scale-95 group"
             >
               {isSmallScreen ? <Menu size={22} /> : (isCollapsed ? <ChevronRight size={22} /> : <Menu size={22} className="group-hover:rotate-180 transition-transform duration-500" />)}
             </button>
             <div className="relative max-w-xl w-full group hidden sm:block">
               <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-              <input 
-                type="text" 
-                placeholder="Search itineraries, bookings, intelligence..." 
+              <input
+                type="text"
+                placeholder="Search itineraries, bookings, intelligence..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-16 pr-6 py-4 bg-muted border border-border rounded-2xl text-sm font-black tracking-tight focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
@@ -259,14 +258,14 @@ const Layout = ({ children, showNav = true }: LayoutProps) => {
               <div className="text-right hidden sm:block">
                 <p className="text-sm font-black text-foreground tracking-tight group-hover:text-primary transition-colors">{fullName}</p>
                 <div className="flex items-center justify-end gap-1.5 mt-0.5">
-                   <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
-                   <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] italic">Verified Agent</span>
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
+                  <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] italic">Verified Agent</span>
                 </div>
               </div>
               <div className="relative">
-                <img 
-                  src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${firstName}`} 
-                  alt="User" 
+                <img
+                  src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${firstName}`}
+                  alt="User"
                   className="w-14 h-14 rounded-2xl border-2 border-primary/20 shadow-xl group-hover:scale-105 transition-all duration-300"
                 />
                 <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-lg border-4 border-background shadow-lg"></div>
@@ -277,9 +276,9 @@ const Layout = ({ children, showNav = true }: LayoutProps) => {
 
         {/* Dynamic Canvas */}
         <div className="flex-1 overflow-y-auto no-scrollbar bg-mesh">
-           <div className="max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-10">
-             {children}
-           </div>
+          <div className="max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-10">
+            {children}
+          </div>
         </div>
       </main>
     </div>

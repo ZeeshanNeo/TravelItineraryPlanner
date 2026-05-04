@@ -1,10 +1,10 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
-import { 
-  Calendar, MapPin, Clock, ArrowLeft, 
+import {
+  Calendar, MapPin, Clock, ArrowLeft,
   Star, Share2, List, CreditCard, FileText, Camera as CameraIcon, Users,
-  Settings, Download, Sparkles
+  Settings, Download, Sparkles, DollarSign, X
 } from 'lucide-react';
 import Button from '../components/shared/Button';
 import { tripService } from '../services/trip.service';
@@ -12,6 +12,7 @@ import itineraryService, { ActivityType } from '../services/itinerary.service';
 import type { TripResponse } from '../services/trip.service';
 import type { ActivityResponse, ItineraryResponse, ItineraryDayResponse } from '../services/itinerary.service';
 import Timeline from '../components/itinerary/Timeline';
+import { useToast } from '../components/shared/Toast';
 
 // Lazy loaded modules for performance
 const BudgetModule = lazy(() => import('../components/budget/BudgetModule'));
@@ -21,6 +22,7 @@ const CollaborationModule = lazy(() => import('../components/collaboration/Colla
 
 const ItineraryDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<'schedule' | 'budget' | 'documentation' | 'memories' | 'collaboration'>('schedule');
   const [activeDay, setActiveDay] = useState(1);
   const [trip, setTrip] = useState<TripResponse | null>(null);
@@ -57,9 +59,9 @@ const ItineraryDetail: React.FC = () => {
     try {
       const tripData = await tripService.getTrip(id!);
       setTrip(tripData);
-      
+
       let itins = await itineraryService.getItinerariesByTrip(id!);
-      
+
       if (itins.length === 0 && tripData) {
         // Auto-create initial itinerary if missing
         const newItin = await itineraryService.createItinerary({
@@ -71,7 +73,7 @@ const ItineraryDetail: React.FC = () => {
         });
         itins = [newItin];
       }
-      
+
       setItineraries(itins);
     } catch (err) {
       console.error('Failed to load itinerary data:', err);
@@ -86,33 +88,42 @@ const ItineraryDetail: React.FC = () => {
     setItineraries(itineraryData);
   };
 
-  const createInitialDays = async (itinId: string) => {
-    if (!trip) return;
+  const createInitialDays = async (itinerary: ItineraryResponse) => {
     try {
-      const start = new Date(trip.startDate);
-      const end = new Date(trip.endDate);
-      const diffTime = Math.abs(end.getTime() - start.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-      
-      for (let i = 1; i <= Math.min(diffDays, 14); i++) {
-        const date = new Date(start);
-        date.setDate(start.getDate() + (i - 1));
-        await itineraryService.createItineraryDay({
-          itineraryId: itinId,
-          dayNumber: i,
-          date: date.toISOString(),
-          title: `Day ${i}`
-        });
+      const [year, month, day] = itinerary.startDate.split('T')[0].split('-').map(Number);
+
+      for (let i = 1; i <= itinerary.totalDays; i++) {
+        const date = new Date(year, month - 1, day);
+        date.setDate(date.getDate() + (i - 1));
+
+        const yyyy = date.getFullYear();
+        const mm = String(date.getMonth() + 1).padStart(2, '0');
+        const dd = String(date.getDate()).padStart(2, '0');
+        const dateStr = `${yyyy}-${mm}-${dd}`;
+
+        try {
+          await itineraryService.createItineraryDay({
+            itineraryId: itinerary.id,
+            dayNumber: i,
+            date: dateStr,
+            title: `Day ${i}`
+          });
+        } catch (dayErr) {
+          console.error(`Failed to create day ${i}:`, dayErr);
+        }
       }
+      showToast(`Itinerary generated: ${itinerary.totalDays} days`, 'success');
       await refreshItineraries();
+      setActiveDay(1);
     } catch (err) {
-      console.error('Failed to create initial days:', err);
+      console.error('Failed to generate itinerary days:', err);
+      showToast('Initial day generation failed', 'error');
     }
   };
 
   useEffect(() => {
     if (itineraries.length > 0 && (!itineraries[0].days || itineraries[0].days.length === 0)) {
-      createInitialDays(itineraries[0].id);
+      createInitialDays(itineraries[0]);
     }
   }, [itineraries, trip]);
 
@@ -189,10 +200,10 @@ const ItineraryDetail: React.FC = () => {
   const saveActivity = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentDayData) return;
-    
+
     setActivitySaving(true);
     setActivityError(null);
-    
+
     try {
       const typeKey = activityForm.activityType as keyof typeof ActivityType;
       const payload: any = {
@@ -218,13 +229,26 @@ const ItineraryDetail: React.FC = () => {
       } else {
         await itineraryService.createActivity(payload);
       }
-      
+
       await refreshItineraries();
       setActivityModalOpen(false);
+      showToast(editingActivity ? 'Activity updated successfully' : 'Activity added to your journey', 'success');
     } catch (err: any) {
       setActivityError(err.response?.data?.message || 'Failed to save experience. Verify details and try again.');
     } finally {
       setActivitySaving(false);
+    }
+  };
+
+  const handleActivitiesReorder = async (activityIds: string[]) => {
+    if (!currentDayData) return;
+    try {
+      await itineraryService.reorderActivities(currentDayData.id, activityIds);
+      await refreshItineraries();
+      showToast('Schedule reordered', 'success');
+    } catch (err) {
+      console.error('Failed to reorder activities:', err);
+      showToast('Failed to save new order', 'error');
     }
   };
 
@@ -233,8 +257,8 @@ const ItineraryDetail: React.FC = () => {
       <div className="pb-24">
         {/* Cinematic Header Area */}
         <div className="relative h-96 overflow-hidden">
-          <img 
-            src={`https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=2000`} 
+          <img
+            src={`https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=2000`}
             alt="Destination"
             className="w-full h-full object-cover"
           />
@@ -245,37 +269,37 @@ const ItineraryDetail: React.FC = () => {
               <span className="text-xs font-black uppercase tracking-widest">Back to Control Center</span>
             </Link>
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
-               <div>
-                  <div className="flex items-center gap-2 mb-4">
-                     <Calendar size={18} className="text-primary" />
-                     <span className="text-sm font-black uppercase tracking-[0.4em] text-white/60">Operational Window</span>
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <Calendar size={18} className="text-primary" />
+                  <span className="text-sm font-black uppercase tracking-[0.4em] text-white/60">Operational Window</span>
+                </div>
+                <h1 className="text-5xl md:text-8xl font-black text-white tracking-tighter leading-none mb-6">
+                  {trip.title || trip.destination}
+                </h1>
+                <div className="flex flex-wrap items-center gap-6 text-white/80">
+                  <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl backdrop-blur-md">
+                    <MapPin size={16} className="text-primary" />
+                    <span className="text-sm font-bold">{trip.destination}</span>
                   </div>
-                  <h1 className="text-5xl md:text-8xl font-black text-white tracking-tighter leading-none mb-6">
-                    {trip.title || trip.destination}
-                  </h1>
-                  <div className="flex flex-wrap items-center gap-6 text-white/80">
-                     <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl backdrop-blur-md">
-                        <MapPin size={16} className="text-primary" />
-                        <span className="text-sm font-bold">{trip.destination}</span>
-                     </div>
-                     <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl backdrop-blur-md">
-                        <Clock size={16} className="text-primary" />
-                        <span className="text-sm font-bold">
-                          {new Date(trip.startDate).toLocaleDateString()} — {new Date(trip.endDate).toLocaleDateString()}
-                        </span>
-                     </div>
+                  <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl backdrop-blur-md">
+                    <Clock size={16} className="text-primary" />
+                    <span className="text-sm font-bold">
+                      {new Date(trip.startDate).toLocaleDateString()} — {new Date(trip.endDate).toLocaleDateString()}
+                    </span>
                   </div>
-               </div>
-               
-               <div className="flex items-center gap-4">
-                  <button className="h-16 px-8 bg-white/10 hover:bg-white/20 backdrop-blur-xl border border-white/20 text-white rounded-2xl flex items-center gap-3 transition-all active:scale-95 group">
-                     <Share2 size={20} className="group-hover:rotate-12 transition-transform" />
-                     <span className="text-[10px] font-black uppercase tracking-widest">Collaborate</span>
-                  </button>
-                  <button className="h-16 w-16 bg-primary hover:bg-primary/90 text-white rounded-2xl flex items-center justify-center shadow-2xl shadow-primary/40 transition-all active:scale-95">
-                     <Settings size={24} />
-                  </button>
-               </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <button className="h-16 px-8 bg-white/10 hover:bg-white/20 backdrop-blur-xl border border-white/20 text-white rounded-2xl flex items-center gap-3 transition-all active:scale-95 group">
+                  <Share2 size={20} className="group-hover:rotate-12 transition-transform" />
+                  <span className="text-[10px] font-black uppercase tracking-widest">Collaborate</span>
+                </button>
+                <button className="h-16 w-16 bg-primary hover:bg-primary/90 text-white rounded-2xl flex items-center justify-center shadow-2xl shadow-primary/40 transition-all active:scale-95">
+                  <Settings size={24} />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -294,11 +318,10 @@ const ItineraryDetail: React.FC = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex items-center gap-3 px-8 h-14 rounded-3xl transition-all duration-300 ${
-                    activeTab === tab.id 
-                      ? 'bg-slate-900 text-white shadow-lg' 
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                  }`}
+                  className={`flex items-center gap-3 px-8 h-14 rounded-3xl transition-all duration-300 ${activeTab === tab.id
+                    ? 'bg-slate-900 text-white shadow-lg'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    }`}
                 >
                   <tab.icon size={18} />
                   <span className="text-xs font-black uppercase tracking-widest">{tab.label}</span>
@@ -317,19 +340,18 @@ const ItineraryDetail: React.FC = () => {
                 <div className="lg:col-span-8">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-12">
                     <div>
-                       <h2 className="text-4xl font-black text-foreground dark:text-white tracking-tighter mb-1">Itinerary Detail</h2>
-                       <p className="text-muted-foreground font-bold text-sm uppercase tracking-widest">Chronological Experience</p>
+                      <h2 className="text-4xl font-black text-foreground dark:text-white tracking-tighter mb-1">Itinerary Detail</h2>
+                      <p className="text-muted-foreground font-bold text-sm uppercase tracking-widest">Chronological Experience</p>
                     </div>
                     <div className="flex gap-2 overflow-x-auto pb-4 sm:pb-0 no-scrollbar p-2 bg-muted dark:bg-slate-900/50 rounded-3xl border border-border dark:border-white/5" role="navigation">
                       {scheduleDays.map((d: ItineraryDayResponse) => (
                         <button
                           key={d.id}
                           onClick={() => setActiveDay(d.dayNumber)}
-                          className={`min-w-[56px] h-14 rounded-2xl flex flex-col items-center justify-center transition-all active:scale-95 ${
-                            activeDay === d.dayNumber 
-                              ? 'bg-primary text-white shadow-xl shadow-primary/30' 
-                              : 'text-muted-foreground hover:text-foreground dark:hover:text-white'
-                          }`}
+                          className={`min-w-[56px] h-14 rounded-2xl flex flex-col items-center justify-center transition-all active:scale-95 ${activeDay === d.dayNumber
+                            ? 'bg-slate-900 text-white shadow-xl shadow-slate-900/20'
+                            : 'text-slate-500 hover:text-primary dark:text-slate-400 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5'
+                            }`}
                         >
                           <span className="text-[10px] font-black uppercase tracking-tighter opacity-60">Day</span>
                           <span className="text-xl font-black leading-none">{d.dayNumber}</span>
@@ -340,16 +362,9 @@ const ItineraryDetail: React.FC = () => {
 
                   <div className="space-y-8">
                     {currentDayData && (
-                      <Timeline 
-                        activities={currentDayData.activities} 
-                        onActivitiesReorder={async (ids) => {
-                          try {
-                            await itineraryService.reorderActivities(currentDayData.id, ids);
-                            await refreshItineraries();
-                          } catch (err) {
-                            console.error('Reorder failed:', err);
-                          }
-                        }}
+                      <Timeline
+                        activities={currentDayData.activities}
+                        onActivitiesReorder={handleActivitiesReorder}
                         onActivityEdit={openEditActivityModal}
                         onActivityDelete={async (activityId) => {
                           if (window.confirm('Archive this experience?')) {
@@ -358,14 +373,12 @@ const ItineraryDetail: React.FC = () => {
                           }
                         }}
                         onAddActivity={openCreateActivityModal}
-                        dayTitle={`Day ${currentDayData.dayNumber}`}
-                        date={currentDayData.date}
                       />
                     )}
                     {!currentDayData && (
                       <div className="text-center py-32 bg-muted dark:bg-slate-900/30 rounded-[3rem] border-2 border-dashed border-border dark:border-slate-800">
                         <div className="w-20 h-20 bg-card dark:bg-slate-800 rounded-[2rem] shadow-sm flex items-center justify-center mx-auto mb-6">
-                           <List size={32} className="text-slate-200" />
+                          <List size={32} className="text-slate-200" />
                         </div>
                         <p className="text-muted-foreground font-black text-sm uppercase tracking-[0.2em] mb-6">No Experiences Logged</p>
                         <Button variant="primary" onClick={openCreateActivityModal} className="rounded-2xl h-12 px-8 text-xs font-black uppercase tracking-widest">+ Add Experience</Button>
@@ -379,7 +392,7 @@ const ItineraryDetail: React.FC = () => {
                   {/* Trip Intelligence Card */}
                   <div className="premium-glass bg-card p-10 rounded-[3rem] shadow-xl border border-slate-50 relative overflow-hidden">
                     <div className="absolute top-0 right-0 p-8 opacity-5">
-                       <Sparkles size={120} className="text-primary" />
+                      <Sparkles size={120} className="text-primary" />
                     </div>
                     <h3 className="text-2xl font-black text-foreground mb-10 tracking-tight">Intelligence</h3>
                     <div className="space-y-8">
@@ -399,32 +412,32 @@ const ItineraryDetail: React.FC = () => {
                         </div>
                       ))}
                     </div>
-                    
+
                     <div className="mt-12 p-6 bg-muted rounded-3xl border border-border">
-                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-4">Journey Completion</p>
-                        <div className="h-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden mb-2">
-                           <div 
-                             className="h-full bg-primary rounded-full transition-all duration-1000" 
-                             style={{ width: `${scheduleDays.length > 0 ? (activeDay / scheduleDays.length) * 100 : 0}%` }}
-                           ></div>
-                        </div>
-                        <div className="flex justify-between items-center text-[10px] font-black text-muted-foreground uppercase">
-                           <span>{scheduleDays.length > 0 ? Math.round((activeDay / scheduleDays.length) * 100) : 0}% Complete</span>
-                           <span>Day {activeDay}/{scheduleDays.length || 0}</span>
-                        </div>
+                      <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-4">Journey Completion</p>
+                      <div className="h-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden mb-2">
+                        <div
+                          className="h-full bg-primary rounded-full transition-all duration-1000"
+                          style={{ width: `${scheduleDays.length > 0 ? (activeDay / scheduleDays.length) * 100 : 0}%` }}
+                        ></div>
+                      </div>
+                      <div className="flex justify-between items-center text-[10px] font-black text-muted-foreground uppercase">
+                        <span>{scheduleDays.length > 0 ? Math.round((activeDay / scheduleDays.length) * 100) : 0}% Complete</span>
+                        <span>Day {activeDay}/{scheduleDays.length || 0}</span>
+                      </div>
                     </div>
                   </div>
 
                   {/* Quick Actions */}
                   <div className="grid grid-cols-2 gap-4">
-                     <button className="p-6 bg-slate-900 rounded-[2rem] text-white flex flex-col gap-3 hover:bg-black transition-all">
-                        <Share2 size={24} className="text-primary" />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Share Project</span>
-                     </button>
-                     <button className="p-6 bg-card border border-border rounded-[2rem] text-foreground flex flex-col gap-3 hover:bg-muted transition-all shadow-sm">
-                        <Download size={24} className="text-muted-foreground" />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Export PDF</span>
-                     </button>
+                    <button className="p-6 bg-slate-900 rounded-[2rem] text-white flex flex-col gap-3 hover:bg-black transition-all">
+                      <Share2 size={24} className="text-primary" />
+                      <span className="text-[10px] font-black uppercase tracking-widest">Share Project</span>
+                    </button>
+                    <button className="p-6 bg-card border border-border rounded-[2rem] text-foreground flex flex-col gap-3 hover:bg-muted transition-all shadow-sm">
+                      <Download size={24} className="text-muted-foreground" />
+                      <span className="text-[10px] font-black uppercase tracking-widest">Export PDF</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -443,140 +456,206 @@ const ItineraryDetail: React.FC = () => {
       </div>
 
       {activityModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4" role="dialog" aria-modal="true">
-          <form onSubmit={saveActivity} className="w-full max-w-3xl max-h-[92vh] overflow-y-auto bg-card rounded-[2rem] shadow-2xl border border-border p-6 md:p-8 animate-fade-in-up">
-            <div className="flex items-start justify-between gap-6 mb-8">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/90 backdrop-blur-2xl p-4 sm:p-6" role="dialog" aria-modal="true">
+          <div className="absolute inset-0" onClick={() => setActivityModalOpen(false)} />
+          <form
+            onSubmit={saveActivity}
+            className="relative w-full max-w-5xl max-h-[90vh] flex flex-col md:flex-row bg-white dark:bg-slate-900 rounded-[3rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden animate-in zoom-in-95 duration-500"
+          >
+            {/* Modal Sidebar - Visual Context */}
+            <div className="hidden md:flex md:w-80 bg-slate-50 dark:bg-slate-800/50 border-r border-slate-100 dark:border-white/5 p-12 flex-col justify-between shrink-0">
               <div>
-                <h2 className="text-2xl md:text-3xl font-black text-foreground tracking-tight">
-                  {editingActivity ? 'Edit Activity' : 'Add Activity'}
+                <div className="w-16 h-16 bg-primary rounded-3xl flex items-center justify-center text-black shadow-[0_10px_25px_rgba(0,0,0,0.8)] mb-10 rotate-[-6deg]">
+                  <Sparkles size={32} />
+                </div>
+                <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter leading-[1.1] mb-4">
+                  {editingActivity ? 'Refine Experience' : 'New Adventure'}
                 </h2>
-                <p className="text-sm text-muted-foreground font-bold uppercase tracking-widest mt-2">
-                  {currentDayData ? `Day ${currentDayData.dayNumber}` : 'Daily schedule'}
+                <p className="text-slate-500 dark:text-slate-400 text-sm font-bold leading-relaxed">
+                  Capture the essence of your journey. Every detail counts toward a perfect trip.
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => setActivityModalOpen(false)}
-                className="h-11 px-4 rounded-2xl bg-muted text-muted-foreground hover:text-foreground font-bold transition-colors"
-              >
-                Close
-              </button>
-            </div>
 
-            {activityError && (
-              <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-700">
-                {activityError}
+              <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500">
+                    <Clock size={18} />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Current Scope</p>
+                    <p className="text-sm font-black text-slate-900 dark:text-white">
+                      {currentDayData ? `Day ${currentDayData.dayNumber}` : 'Master Itinerary'}
+                    </p>
+                  </div>
+                </div>
               </div>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <label className="space-y-2 md:col-span-2">
-                <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">Title</span>
-                <input
-                  required
-                  value={activityForm.title}
-                  onChange={(event) => setActivityForm({ ...activityForm, title: event.target.value })}
-                  className="w-full rounded-2xl border border-border bg-background px-5 py-4 font-bold outline-none focus:ring-4 focus:ring-primary/10"
-                  placeholder="Museum visit, dinner reservation, train to Kyoto..."
-                />
-              </label>
-
-              <label className="space-y-2">
-                <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">Type</span>
-                <select
-                  value={activityForm.activityType}
-                  onChange={(event) => setActivityForm({ ...activityForm, activityType: event.target.value })}
-                  className="w-full rounded-2xl border border-border bg-background px-5 py-4 font-bold outline-none focus:ring-4 focus:ring-primary/10"
-                >
-                  {Object.keys(ActivityType).map((type) => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="space-y-2">
-                <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">Location</span>
-                <input
-                  value={activityForm.location}
-                  onChange={(event) => setActivityForm({ ...activityForm, location: event.target.value })}
-                  className="w-full rounded-2xl border border-border bg-background px-5 py-4 font-bold outline-none focus:ring-4 focus:ring-primary/10"
-                  placeholder="Place or area"
-                />
-              </label>
-
-              <label className="space-y-2">
-                <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">Start</span>
-                <input
-                  type="time"
-                  required
-                  value={activityForm.startTime}
-                  onChange={(event) => setActivityForm({ ...activityForm, startTime: event.target.value })}
-                  className="w-full rounded-2xl border border-border bg-background px-5 py-4 font-bold outline-none focus:ring-4 focus:ring-primary/10"
-                />
-              </label>
-
-              <label className="space-y-2">
-                <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">End</span>
-                <input
-                  type="time"
-                  required
-                  value={activityForm.endTime}
-                  onChange={(event) => setActivityForm({ ...activityForm, endTime: event.target.value })}
-                  className="w-full rounded-2xl border border-border bg-background px-5 py-4 font-bold outline-none focus:ring-4 focus:ring-primary/10"
-                />
-              </label>
-
-              <label className="space-y-2">
-                <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">Cost</span>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={activityForm.cost}
-                  onChange={(event) => setActivityForm({ ...activityForm, cost: event.target.value })}
-                  className="w-full rounded-2xl border border-border bg-background px-5 py-4 font-bold outline-none focus:ring-4 focus:ring-primary/10"
-                  placeholder="0.00"
-                />
-              </label>
-
-              <label className="space-y-2">
-                <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">Currency</span>
-                <input
-                  value={activityForm.currency}
-                  maxLength={3}
-                  onChange={(event) => setActivityForm({ ...activityForm, currency: event.target.value.toUpperCase() })}
-                  className="w-full rounded-2xl border border-border bg-background px-5 py-4 font-bold outline-none focus:ring-4 focus:ring-primary/10"
-                />
-              </label>
-
-              <label className="space-y-2 md:col-span-2">
-                <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">Description</span>
-                <textarea
-                  value={activityForm.description}
-                  onChange={(event) => setActivityForm({ ...activityForm, description: event.target.value })}
-                  className="min-h-24 w-full rounded-2xl border border-border bg-background px-5 py-4 font-bold outline-none focus:ring-4 focus:ring-primary/10"
-                  placeholder="Important timing, reservation, or planning details"
-                />
-              </label>
-
-              <label className="flex items-center gap-3 rounded-2xl border border-border bg-muted/50 px-5 py-4 md:col-span-2">
-                <input
-                  type="checkbox"
-                  checked={activityForm.isFlexible}
-                  onChange={(event) => setActivityForm({ ...activityForm, isFlexible: event.target.checked })}
-                  className="h-5 w-5 accent-primary"
-                />
-                <span className="text-sm font-bold text-foreground">This activity is flexible</span>
-              </label>
             </div>
 
-            <div className="mt-8 flex flex-col sm:flex-row sm:justify-end gap-3">
-              <Button type="button" variant="outline" onClick={() => setActivityModalOpen(false)} className="rounded-2xl">
-                Cancel
-              </Button>
-              <Button type="submit" isLoading={activitySaving} className="rounded-2xl">
-                {editingActivity ? 'Save Activity' : 'Create Activity'}
-              </Button>
+            {/* Modal Content - Form Fields */}
+            <div className="flex-1 flex flex-col min-w-0">
+              {/* Header for Mobile */}
+              <div className="md:hidden p-8 border-b border-slate-100 dark:border-white/5">
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                  {editingActivity ? 'Edit Activity' : 'Add Activity'}
+                </h2>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-8 md:p-14 space-y-10 custom-scrollbar">
+                {activityError && (
+                  <div className="p-5 rounded-2xl bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20 text-rose-600 dark:text-rose-400 text-sm font-bold animate-in slide-in-from-top-2">
+                    {activityError}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
+                  <div className="md:col-span-2">
+                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 block ml-1">Experience Title</label>
+                    <div className="relative group">
+                      <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
+                        <Sparkles size={20} />
+                      </div>
+                      <input
+                        required
+                        value={activityForm.title}
+                        onChange={(event) => setActivityForm({ ...activityForm, title: event.target.value })}
+                        className="w-full h-16 bg-slate-50 dark:bg-slate-800/30 border-2 border-slate-100 dark:border-white/5 rounded-2xl pl-16 pr-6 font-bold text-slate-900 dark:text-white outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary focus:bg-white dark:focus:bg-slate-800 transition-all"
+                        placeholder="e.g. Sushi Masterclass in Ginza"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 block ml-1">Classification</label>
+                    <select
+                      value={activityForm.activityType}
+                      onChange={(event) => setActivityForm({ ...activityForm, activityType: event.target.value })}
+                      className="w-full h-16 bg-slate-50 dark:bg-slate-800/30 border-2 border-slate-100 dark:border-white/5 rounded-2xl px-6 font-bold text-slate-900 dark:text-white outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all appearance-none"
+                    >
+                      {Object.keys(ActivityType).map((type) => (
+                        <option key={type} value={type}>{type}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 block ml-1">Pinpoint Location</label>
+                    <div className="relative group">
+                      <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
+                        <MapPin size={20} />
+                      </div>
+                      <input
+                        value={activityForm.location}
+                        onChange={(event) => setActivityForm({ ...activityForm, location: event.target.value })}
+                        className="w-full h-16 bg-slate-50 dark:bg-slate-800/30 border-2 border-slate-100 dark:border-white/5 rounded-2xl pl-16 pr-6 font-bold text-slate-900 dark:text-white outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all"
+                        placeholder="Search location..."
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 block ml-1">Start Time</label>
+                    <div className="relative group">
+                      <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
+                        <Clock size={20} />
+                      </div>
+                      <input
+                        type="time"
+                        required
+                        value={activityForm.startTime}
+                        onChange={(event) => setActivityForm({ ...activityForm, startTime: event.target.value })}
+                        className="w-full h-16 bg-slate-50 dark:bg-slate-800/30 border-2 border-slate-100 dark:border-white/5 rounded-2xl pl-16 pr-6 font-bold text-slate-900 dark:text-white outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 block ml-1">End Time</label>
+                    <div className="relative group">
+                      <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
+                        <Clock size={20} />
+                      </div>
+                      <input
+                        type="time"
+                        required
+                        value={activityForm.endTime}
+                        onChange={(event) => setActivityForm({ ...activityForm, endTime: event.target.value })}
+                        className="w-full h-16 bg-slate-50 dark:bg-slate-800/30 border-2 border-slate-100 dark:border-white/5 rounded-2xl pl-16 pr-6 font-bold text-slate-900 dark:text-white outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 block ml-1">Forecasted Cost</label>
+                    <div className="relative group">
+                      <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
+                        <DollarSign size={20} />
+                      </div>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={activityForm.cost}
+                        onChange={(event) => setActivityForm({ ...activityForm, cost: event.target.value })}
+                        className="w-full h-16 bg-slate-50 dark:bg-slate-800/30 border-2 border-slate-100 dark:border-white/5 rounded-2xl pl-16 pr-6 font-bold text-slate-900 dark:text-white outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all"
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 block ml-1">Currency Code</label>
+                    <input
+                      value={activityForm.currency}
+                      maxLength={3}
+                      onChange={(event) => setActivityForm({ ...activityForm, currency: event.target.value.toUpperCase() })}
+                      className="w-full h-16 bg-slate-50 dark:bg-slate-800/30 border-2 border-slate-100 dark:border-white/5 rounded-2xl px-6 font-bold text-slate-900 dark:text-white outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-center uppercase tracking-widest"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 block ml-1">Additional Intelligence</label>
+                    <textarea
+                      value={activityForm.description}
+                      onChange={(event) => setActivityForm({ ...activityForm, description: event.target.value })}
+                      className="min-h-32 w-full bg-slate-50 dark:bg-slate-800/30 border-2 border-slate-100 dark:border-white/5 rounded-[2rem] p-8 font-bold text-slate-900 dark:text-white outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary focus:bg-white dark:focus:bg-slate-800 transition-all resize-none"
+                      placeholder="Important timing, reservation, or planning details..."
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="flex items-center gap-4 group cursor-pointer p-2">
+                      <div className={`w-6 h-6 rounded-lg border-2 transition-all flex items-center justify-center ${activityForm.isFlexible ? 'bg-primary border-primary shadow-lg shadow-primary/20' : 'border-slate-200 dark:border-white/10 group-hover:border-primary/50'}`}>
+                        {activityForm.isFlexible && <X size={14} className="text-white rotate-45" />}
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={activityForm.isFlexible}
+                        onChange={(event) => setActivityForm({ ...activityForm, isFlexible: event.target.checked })}
+                        className="hidden"
+                      />
+                      <span className="text-sm font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">Mark as Flexible Opportunity</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer Actions */}
+              <div className="p-8 md:p-10 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-slate-800/20 flex flex-col sm:flex-row justify-end gap-4 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setActivityModalOpen(false)}
+                  className="h-16 px-12 rounded-2xl font-black uppercase tracking-widest bg-emerald-800 text-white hover:bg-slate-800 shadow-2xl shadow-primary/100 transition-all active:scale-95"
+                >
+                  Discard
+                </button>
+                <Button
+                  type="submit"
+                  isLoading={activitySaving}
+                  className="h-16 px-12 rounded-2xl font-black uppercase tracking-widest bg-gradient-to-r from-slate-900 to-slate-700 text-white hover:from-slate-800 hover:to-slate-600 shadow-[0_10px_30px_rgba(0,0,0,0.7)] transition-all active:scale-95"
+                >
+                  {editingActivity ? 'Save Experience' : 'Finalize Activity'}
+                </Button>
+              </div>
             </div>
           </form>
         </div>

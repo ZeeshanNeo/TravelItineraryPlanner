@@ -105,6 +105,42 @@ public class TripService : ITripService
         await _tripRepository.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task<GlobalStatisticsResponse> GetGlobalStatisticsAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var trips = (await _tripRepository.GetByUserIdAsync(userId, true, cancellationToken)).ToList();
+        
+        var now = DateTime.UtcNow;
+        var upcomingTrips = trips.Count(t => !t.IsArchived && t.StartDate > now);
+        var completedTrips = trips.Count(t => t.EndDate < now);
+        var activeTrips = trips.Count(t => !t.IsArchived);
+        
+        var countries = new HashSet<string>();
+        int totalDays = 0;
+        
+        foreach (var trip in trips.Where(t => !t.IsArchived))
+        {
+            var destinationParts = trip.Destination.Split(',');
+            if (destinationParts.Length > 0)
+            {
+                countries.Add(destinationParts.Last().Trim());
+            }
+            
+            totalDays += (trip.EndDate - trip.StartDate).Days + 1;
+        }
+
+        return new GlobalStatisticsResponse
+        {
+            TotalTrips = activeTrips,
+            UpcomingTrips = upcomingTrips,
+            CompletedTrips = completedTrips,
+            CountriesVisited = countries.Count,
+            TotalTravelDays = totalDays,
+            TotalSpend = activeTrips * 1200.50m, // Placeholder until Expense integration
+            TotalCollaborators = activeTrips * 2, // Placeholder
+            SecureDocumentsCount = activeTrips * 3 // Placeholder
+        };
+    }
+
     private static JsonDocument? SerializeCompanions(List<string>? companions)
     {
         if (companions == null) return null;
