@@ -1,0 +1,61 @@
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: voyager-db
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=${MSSQL_SA_PASSWORD:-Password123!}
+      - MSSQL_PID=Express
+    ports:
+      - "1433:1433"
+    healthcheck:
+      test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "${MSSQL_SA_PASSWORD:-Password123!}", "-Q", "SELECT 1", "-C"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - mssql-data:/var/opt/mssql
+    networks:
+      - voyager-network
+    restart: always
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../deployment/backend.Dockerfile
+    container_name: voyager-backend
+    ports:
+      - "5282:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=db;Database=TravelItineraryPlanner;User Id=sa;Password=${MSSQL_SA_PASSWORD:-Password123!};TrustServerCertificate=True;
+      - Jwt__Secret=${JWT_SECRET:-your-super-secret-key-with-at-least-32-characters}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - upload-data:/app/uploads
+    networks:
+      - voyager-network
+    restart: always
+
+  frontend:
+    build:
+      context: .
+      dockerfile: deployment/frontend.Dockerfile
+    container_name: voyager-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - voyager-network
+    restart: always
+
+networks:
+  voyager-network:
+    driver: bridge
+
+volumes:
+  mssql-data:
+  upload-data:

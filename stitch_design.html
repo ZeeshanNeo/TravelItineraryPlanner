@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-tint": "#0053db",
+                        "surface-container-lowest": "#0a0c12",
+                        "outline": "#737686",
+                        "on-tertiary-fixed": "#00184a",
+                        "on-surface": "#faf8ff",
+                        "on-primary-container": "#eeefff",
+                        "on-tertiary": "#ffffff",
+                        "surface-container": "#131b2e",
+                        "surface": "#0a0c12",
+                        "on-error-container": "#93000a",
+                        "secondary-container": "#da3339",
+                        "on-primary-fixed": "#00174b",
+                        "on-secondary-container": "#fffbff",
+                        "on-error": "#ffffff",
+                        "inverse-on-surface": "#131b2e",
+                        "on-primary-fixed-variant": "#003ea8",
+                        "on-secondary-fixed": "#410005",
+                        "primary": "#2563eb",
+                        "error": "#ba1a1a",
+                        "error-container": "#ffdad6",
+                        "primary-fixed": "#dbe1ff",
+                        "on-background": "#faf8ff",
+                        "secondary-fixed-dim": "#ffb3ae",
+                        "secondary": "#b61524",
+                        "secondary-fixed": "#ffdad7",
+                        "on-tertiary-container": "#eeefff",
+                        "primary-fixed-dim": "#b4c5ff",
+                        "surface-container-low": "#1a2236",
+                        "on-tertiary-fixed-variant": "#003ea6",
+                        "surface-variant": "#283044",
+                        "surface-container-high": "#2d3748",
+                        "inverse-primary": "#b4c5ff",
+                        "outline-variant": "#434655",
+                        "tertiary-fixed-dim": "#b3c5ff",
+                        "tertiary-container": "#2864e6",
+                        "surface-dim": "#131b2e",
+                        "surface-bright": "#283044",
+                        "on-secondary": "#ffffff",
+                        "primary-container": "#2563eb",
+                        "inverse-surface": "#faf8ff",
+                        "surface-container-highest": "#4a5568",
+                        "tertiary": "#004bc4",
+                        "on-secondary-fixed-variant": "#930016",
+                        "tertiary-fixed": "#dbe1ff",
+                        "background": "#0a0c12",
+                        "on-primary": "#ffffff",
+                        "on-surface-variant": "#c3c6d7"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "h3": ["Plus Jakarta Sans"],
+                        "body-lg": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "h1": ["Plus Jakarta Sans"],
+                        "h2": ["Plus Jakarta Sans"],
+                        "label-caps": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "h3": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "h1": ["48px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "h2": ["32px", {"lineHeight": "1.3", "fontWeight": "700"}],
+                        "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>.glass-panel {
+    background: rgba(19, 27, 46, 0.6);
+    backdrop-filter: blur(40px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5)
+    }
+.inner-glow {
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.1)
+    }
+.hero-vignette {
+    background: radial-gradient(circle, rgba(0, 0, 0, 0) 0%, rgba(10, 12, 18, 0.8) 100%)
+    }
+/* Parallax Motion Background */
+.parallax-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 300%;
+    height: 100%;
+    background-repeat: repeat-x;
+    pointer-events: none
+    }
+@keyframes move-background {
+    from {
+        transform: translateX(0);
+        } to {
+        transform: translateX(-33.33%);
+        }
+    }
+.layer-bg {
+    background-image: url(https://lh3.googleusercontent.com/aida-public/AB6AXuCov5WRG7xJy6zHieBEdKBBaaJ3p0blM3AkbmLiVwut9njx0m50NkYrZLjjh26i0k8OiPmgctq3FXh9Ag2XDxiKDW003D16pLDrQYtfqllMco3x0SGLxgZd9U24po3p1zJxKFgcn4ydB76Xe1RzWFkuooaTvbJyJPay41pfsJHLkZ4mLXBtGgtZu0p4PJ6Olv5PLP8D6bA1rggCOY8XScMR5nJDl7t_DI13LByBBVvCectAZ_Orh1D9nT4CtpU-IuN6folFdRJkyowy);
+    opacity: 0.1;
+    animation: move-background 120s linear infinite
+    }
+.layer-mid {
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.02) 50%, transparent 100%);
+    background-size: 800px 100%;
+    filter: blur(20px);
+    animation: move-background 40s linear infinite
+    }
+.layer-fg {
+    background: radial-gradient(circle at 50% 50%, rgba(37, 99, 235, 0.05) 0%, transparent 20%);
+    background-size: 600px 600px;
+    filter: blur(40px);
+    animation: move-background 20s linear infinite
+    }
+/* Abstract City Lights & Traffic */
+.traffic-light {
+    position: absolute;
+    width: 150px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    filter: blur(2px);
+    animation: move-background 10s linear infinite
+    }
+.primary-glow-hover:hover {
+    box-shadow: 0 0 20px rgba(37, 99, 235, 0.4)
+    }
+[x-cloak] {
+    display: none !important
+    }</style>
+<script defer="" src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-surface font-body-md text-on-surface min-h-screen relative overflow-hidden" x-data="{ mode: 'login' }">
+<!-- Cinematic Parallax Background -->
+<div class="fixed inset-0 z-0 bg-[#0a0c12]">
+<img alt="Luxury Travel Interior" class="absolute inset-0 w-full h-full object-cover opacity-30 grayscale contrast-125" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8ri38B0P14R7hFv1_fh6xokOgZUQSe8xmgYXPZNHt3Pzd5tPQqnVpdpSGPkv9GtPLZeJcayI2flgxTCzj_Lu9EK2FOH9JVJsaEUh5HZf1sLgTywEQ4qb9xBTAU-stmA-mmFvtMAt5sBYx2iV14BxA4MIRNcz7KxSjy9b351BrzggqE9kj5Pk8GovM5ttuJuckta9cVvDbFWed5kTgvQoK66z_QwpHAxYVIHxJzhwpW9xyTNT9H3nWVX3I3LnTjRHdp6TIcdi7EPEU"/>
+<!-- Moving layers -->
+<div class="parallax-layer layer-bg"></div>
+<div class="parallax-layer layer-mid"></div>
+<div class="parallax-layer layer-fg"></div>
+<!-- Animated Streaks (Traffic/City Lights) -->
+<div class="traffic-light top-[20%] left-[-10%]" style="animation-duration: 8s; background: linear-gradient(90deg, transparent, #2563eb, transparent);"></div>
+<div class="traffic-light top-[60%] left-[20%]" style="animation-duration: 12s; background: linear-gradient(90deg, transparent, #b61524, transparent);"></div>
+<div class="traffic-light top-[45%] left-[-30%]" style="animation-duration: 6s; opacity: 0.3;"></div>
+<div class="absolute inset-0 hero-vignette"></div>
+</div>
+<div class="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-12 md:px-6">
+<!-- Branding -->
+<div class="mb-10 text-center">
+<h1 class="font-h1 text-h1 text-on-surface flex items-center gap-3 justify-center text-4xl md:text-6xl">
+<span class="material-symbols-outlined text-primary text-5xl md:text-6xl" data-icon="directions_bus">directions_bus</span>
+<span class="tracking-tight font-extrabold bg-gradient-to-br from-white via-on-surface-variant to-primary bg-clip-text text-transparent">Voyager Pro</span>
+</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant/80 mt-4 max-w-sm mx-auto">Luxury performance for the modern traveler.</p>
+</div>
+<!-- Main Card -->
+<div class="w-full max-w-md glass-panel rounded-[2.5rem] p-8 md:p-12 transition-all duration-500 inner-glow">
+<!-- Tab Toggle -->
+<div class="flex items-center justify-center gap-10 mb-10 border-b border-white/5">
+<button :class="mode === 'login' ? 'text-primary border-primary' : 'text-outline/60 hover:text-on-surface border-transparent'" @click="mode = 'login'" class="font-h3 text-h3 pb-4 border-b-2 transition-all focus:outline-none">
+                Login
+            </button>
+<button :class="mode === 'signup' ? 'text-primary border-primary' : 'text-outline/60 hover:text-on-surface border-transparent'" @click="mode = 'signup'" class="font-h3 text-h3 pb-4 border-b-2 transition-all focus:outline-none">
+                Sign Up
+            </button>
+</div>
+<!-- Login Form -->
+<form class="space-y-6" x-show="mode === 'login'" x-transition:enter="transition ease-out duration-300" x-transition:enter-end="opacity-100 translate-y-0" x-transition:enter-start="opacity-0 translate-y-4">
+<div class="space-y-2">
+<label class="font-label-caps text-on-surface-variant/70 ml-1">Email Address</label>
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline/50 group-focus-within:text-primary transition-all duration-300" data-icon="mail">mail</span>
+<input class="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-primary/50 focus:bg-white/10 focus:ring-4 focus:ring-primary/10 outline-none transition-all placeholder:text-outline/30 font-body-md text-white" placeholder="alex@voyager.pro" type="email"/>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between items-center px-1">
+<label class="font-label-caps text-on-surface-variant/70">Password</label>
+<button class="font-label-caps text-primary/80 hover:text-primary transition-colors" type="button">Forgot?</button>
+</div>
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline/50 group-focus-within:text-primary transition-all duration-300" data-icon="lock">lock</span>
+<input class="w-full pl-12 pr-12 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-primary/50 focus:bg-white/10 focus:ring-4 focus:ring-primary/10 outline-none transition-all placeholder:text-outline/30 font-body-md text-white" placeholder="••••••••" type="password"/>
+<button class="absolute right-4 top-1/2 -translate-y-1/2 text-outline/50 hover:text-on-surface transition-colors" type="button">
+<span class="material-symbols-outlined" data-icon="visibility">visibility</span>
+</button>
+</div>
+</div>
+<button class="w-full py-5 bg-primary text-on-primary font-h3 text-lg rounded-2xl inner-glow shadow-2xl shadow-primary/30 hover:brightness-110 hover:scale-[1.01] active:scale-[0.98] transition-all primary-glow-hover mt-4" type="submit">
+                Sign In to Voyager Pro
+            </button>
+</form>
+<!-- Sign Up Form -->
+<form class="space-y-6" x-cloak="" x-data="{ pswd: '' }" x-show="mode === 'signup'" x-transition:enter="transition ease-out duration-300" x-transition:enter-end="opacity-100 translate-y-0" x-transition:enter-start="opacity-0 translate-y-4">
+<div class="space-y-2">
+<label class="font-label-caps text-on-surface-variant/70 ml-1">Full Name</label>
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline/50 group-focus-within:text-primary transition-all duration-300" data-icon="person">person</span>
+<input class="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-primary/50 focus:bg-white/10 focus:ring-4 focus:ring-primary/10 outline-none transition-all placeholder:text-outline/30 font-body-md text-white" placeholder="Alex Voyager" type="text"/>
+</div>
+</div>
+<div class="space-y-2">
+<label class="font-label-caps text-on-surface-variant/70 ml-1">Business Email</label>
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline/50 group-focus-within:text-primary transition-all duration-300" data-icon="business">business</span>
+<input class="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-primary/50 focus:bg-white/10 focus:ring-4 focus:ring-primary/10 outline-none transition-all placeholder:text-outline/30 font-body-md text-white" placeholder="alex@company.com" type="email"/>
+</div>
+</div>
+<div class="space-y-2">
+<label class="font-label-caps text-on-surface-variant/70 ml-1">Create Password</label>
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline/50 group-focus-within:text-primary transition-all duration-300" data-icon="lock">lock</span>
+<input class="w-full pl-12 pr-12 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-primary/50 focus:bg-white/10 focus:ring-4 focus:ring-primary/10 outline-none transition-all placeholder:text-outline/30 font-body-md text-white" placeholder="••••••••" type="password" x-model="pswd"/>
+</div>
+<div class="mt-3 space-y-2">
+<div class="flex gap-1.5">
+<div :class="pswd.length &gt; 0 ? (pswd.length &gt; 8 ? 'bg-green-500' : 'bg-secondary') : 'bg-white/10'" class="h-1.5 flex-1 rounded-full transition-all"></div>
+<div :class="pswd.length &gt; 8 ? 'bg-green-500' : 'bg-white/10'" class="h-1.5 flex-1 rounded-full transition-all"></div>
+<div :class="pswd.length &gt; 12 ? 'bg-green-500' : 'bg-white/10'" class="h-1.5 flex-1 rounded-full transition-all"></div>
+<div :class="pswd.length &gt; 15 ? 'bg-green-500' : 'bg-white/10'" class="h-1.5 flex-1 rounded-full transition-all"></div>
+</div>
+<div class="flex justify-between items-center text-[10px] font-label-caps uppercase text-on-surface-variant/50">
+<span>Security Strength</span>
+<span :class="pswd.length &gt; 8 ? 'text-green-500' : 'text-secondary'" x-text="pswd.length === 0 ? 'None' : (pswd.length &lt; 8 ? 'Weak' : (pswd.length &lt; 13 ? 'Fair' : 'Strong'))">Weak</span>
+</div>
+</div>
+</div>
+<button class="w-full py-5 bg-primary text-on-primary font-h3 text-lg rounded-2xl inner-glow shadow-2xl shadow-primary/30 hover:brightness-110 hover:scale-[1.01] active:scale-[0.98] transition-all primary-glow-hover mt-4" type="submit">
+                Create Account
+            </button>
+</form>
+<!-- Terms Footer -->
+<div class="mt-10 text-center">
+<p class="font-body-sm text-on-surface-variant/60 leading-relaxed">
+                By continuing, you agree to our 
+                <a class="text-primary hover:text-primary-fixed transition-colors underline underline-offset-4 decoration-primary/30" href="#">Terms of Service</a> and 
+                <a class="text-primary hover:text-primary-fixed transition-colors underline underline-offset-4 decoration-primary/30" href="#">Privacy Policy</a>.
+            </p>
+</div>
+</div>
+<!-- Bottom Features -->
+<div class="mt-12 flex flex-wrap justify-center items-center gap-8 md:gap-16 font-label-caps text-on-surface-variant/70">
+<div class="flex items-center gap-3 group cursor-default">
+<span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform" data-icon="verified_user">verified_user</span>
+<span class="tracking-widest">Enterprise Grade Security</span>
+</div>
+<div class="flex items-center gap-3 group cursor-default">
+<span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform" data-icon="public">public</span>
+<span class="tracking-widest">Global Concierge 24/7</span>
+</div>
+</div>
+</div>
+<!-- Floating Help Widget -->
+<div class="fixed bottom-8 right-8 hidden md:block">
+<div class="glass-panel p-5 rounded-[2rem] flex items-center gap-5 hover:-translate-y-2 transition-all duration-300 cursor-pointer inner-glow border border-white/10">
+<div class="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30">
+<span class="material-symbols-outlined text-primary text-2xl" data-icon="support_agent">support_agent</span>
+</div>
+<div class="pr-2">
+<p class="font-label-caps text-on-surface tracking-wider">Need assistance?</p>
+<p class="font-body-sm text-on-surface-variant/60">Talk to a Voyage Specialist</p>
+</div>
+</div>
+</div>
+</body></html>

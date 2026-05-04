@@ -1,0 +1,14 @@
+.git
+.vs
+backend/
+node_modules
+dist
+.env
+*.user
+*.sln
+*.slnx
+TravelItineraryPlanner.Tests/
+Infrastructure/
+Application/
+Domain/
+API/

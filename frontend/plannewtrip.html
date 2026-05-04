@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-tint": "#0053db",
+                        "surface-container-lowest": "#ffffff",
+                        "outline": "#737686",
+                        "on-tertiary-fixed": "#00184a",
+                        "on-surface": "#131b2e",
+                        "on-primary-container": "#eeefff",
+                        "on-tertiary": "#ffffff",
+                        "surface-container": "#eaedff",
+                        "surface": "#faf8ff",
+                        "on-error-container": "#93000a",
+                        "secondary-container": "#da3339",
+                        "on-primary-fixed": "#00174b",
+                        "on-secondary-container": "#fffbff",
+                        "on-error": "#ffffff",
+                        "inverse-on-surface": "#eef0ff",
+                        "on-primary-fixed-variant": "#003ea8",
+                        "on-secondary-fixed": "#410005",
+                        "primary": "#004ac6",
+                        "error": "#ba1a1a",
+                        "error-container": "#ffdad6",
+                        "primary-fixed": "#dbe1ff",
+                        "on-background": "#131b2e",
+                        "secondary-fixed-dim": "#ffb3ae",
+                        "secondary": "#b61524",
+                        "secondary-fixed": "#ffdad7",
+                        "on-tertiary-container": "#eeefff",
+                        "primary-fixed-dim": "#b4c5ff",
+                        "surface-container-low": "#f2f3ff",
+                        "on-tertiary-fixed-variant": "#003ea6",
+                        "surface-variant": "#dae2fd",
+                        "surface-container-high": "#e2e7ff",
+                        "inverse-primary": "#b4c5ff",
+                        "outline-variant": "#c3c6d7",
+                        "tertiary-fixed-dim": "#b3c5ff",
+                        "tertiary-container": "#2864e6",
+                        "surface-dim": "#d2d9f4",
+                        "surface-bright": "#faf8ff",
+                        "on-secondary": "#ffffff",
+                        "primary-container": "#2563eb",
+                        "inverse-surface": "#283044",
+                        "surface-container-highest": "#dae2fd",
+                        "tertiary": "#004bc4",
+                        "on-secondary-fixed-variant": "#930016",
+                        "tertiary-fixed": "#dbe1ff",
+                        "background": "#faf8ff",
+                        "on-primary": "#ffffff",
+                        "on-surface-variant": "#434655"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "h3": ["Plus Jakarta Sans"],
+                        "body-lg": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "h1": ["Plus Jakarta Sans"],
+                        "h2": ["Plus Jakarta Sans"],
+                        "label-caps": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "h3": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "h1": ["48px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "h2": ["32px", {"lineHeight": "1.3", "fontWeight": "700"}],
+                        "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        }
+    </style>
+</head>
+<body class="bg-background font-body-md text-on-background overflow-hidden">
+<div class="fixed inset-0 z-0 blur-xl opacity-60">
+<div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary-fixed rounded-full filter blur-[120px]"></div>
+<div class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-tertiary-fixed rounded-full filter blur-[120px]"></div>
+</div>
+<div class="relative z-10 flex h-screen filter blur-md grayscale-[0.2]">
+<aside class="fixed left-0 top-0 h-full flex flex-col z-40 bg-white/60 dark:bg-slate-950/60 backdrop-blur-2xl h-screen w-64 border-r border-slate-200 dark:border-slate-800 shadow-2xl shadow-blue-900/5 transition-transform duration-300 ease-in-out">
+<div class="p-6">
+<span class="text-2xl font-black text-blue-700 dark:text-blue-500 font-h2">Voyager</span>
+<p class="text-slate-500 font-label-caps mt-1">Enterprise Travel</p>
+</div>
+<nav class="flex-1 px-4 space-y-1">
+<div class="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-blue-600/10 to-transparent text-blue-600 dark:text-blue-400 border-r-4 border-blue-600 font-h3 text-sm">
+<span class="material-symbols-outlined">dashboard</span>
+<span>Dashboard</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-blue-500 hover:bg-slate-100/50 transition-colors font-body-md text-sm">
+<span class="material-symbols-outlined">map</span>
+<span>Itinerary</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-blue-500 hover:bg-slate-100/50 transition-colors font-body-md text-sm">
+<span class="material-symbols-outlined">flight_takeoff</span>
+<span>Bookings</span>
+</div>
+</nav>
+</aside>
+<main class="flex-1 ml-64 overflow-hidden">
+<header class="sticky top-0 z-50 flex justify-between items-center px-6 py-3 w-full bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border-b border-white/20 shadow-xl shadow-blue-500/10">
+<div class="flex items-center gap-4 flex-1">
+<div class="relative max-w-md w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-white/50 border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" placeholder="Search trips or destinations..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-slate-500 hover:bg-white/40 rounded-full transition-all active:scale-95">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="h-10 w-10 rounded-full overflow-hidden border-2 border-white shadow-sm">
+<img alt="User Profile" data-alt="A professional portrait of a woman executive in her late 30s with a confident smile, wearing a modern charcoal blazer. The background is a soft-focus office interior with clean lines and warm, natural sunlight filtering through large windows, creating a premium and corporate-focused atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAO_9AUEhis-F3J-7zOjtVmbuE23jXWD7wnA85WVoJTZ9c2Pes1T24Bo33KkOCpdEhI8ryHcdKMmQ-KMpWC-JLt1H9PmI6n5PF_Ih_cXtd4wf1KujHqHO8PiGEdmWmaDlc-O0Jay4nivk2RXb4KduP7ho56P629iseQUTCz4kMwJWNQrUCiALheC0i_OU5fWviXfqoIGWr5XTd6VIUyv5vrmLkEtD7XeEAJQNcwGE0Gle0ScQ8v6wemx8vGp_knXGtW8wHNIgo_9UNu"/>
+</div>
+</div>
+</header>
+<div class="p-8">
+<div class="grid grid-cols-12 gap-6">
+<div class="col-span-8 space-y-6">
+<div class="h-64 glass-card rounded-2xl overflow-hidden relative group">
+<img class="w-full h-full object-cover" data-alt="A breathtaking view of a tropical beach resort at golden hour. The sky is painted in hues of orange, pink, and deep sea blue. Luxurious overwater bungalows extend into crystal-clear turquoise waters. The scene is illuminated by the soft, warm light of the setting sun, evoking a sense of high-end travel and serene exploration." src="https://lh3.googleusercontent.com/aida-public/AB6AXuASZU8kigaQe95B-QWQB4obPTwYIHBwUH3DGDm2MvpwWY-J5FhHvl3IbkWPLbNKuP75JO9mmp6ZX72OJXgyJLssmN9mgPhIEh-SbbrBtHAvyGJhCPl_GsD196FlQMzjXiV2ryEZg4-DDVNRUQo_lIKCtv7X3N4Et7XJxg9Xe1XrReGG5gwALOLGmG04B7JjtThfqZg3roAAKkGvb0syr3GFcIPlTlWasaGeQ_9A0VfYMglvsZLcn8eAHS9dRc7ElyO8ddn1dWdvj_02"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-8">
+<h1 class="font-h1 text-white text-3xl mb-2">Upcoming Trip: Maldives</h1>
+<p class="text-white/90 font-body-lg">6 days remaining until departure</p>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-6">
+<div class="glass-card rounded-2xl p-6 h-40"></div>
+<div class="glass-card rounded-2xl p-6 h-40"></div>
+</div>
+</div>
+<div class="col-span-4 glass-card rounded-2xl p-6 h-full"></div>
+</div>
+</div>
+</main>
+</div>
+<div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-on-surface/30 backdrop-blur-md">
+<div class="w-full max-w-2xl glass-panel rounded-[2rem] shadow-2xl overflow-hidden border border-white/40 flex flex-col max-h-[921px]">
+<div class="px-8 pt-8 pb-6 bg-gradient-to-b from-white/40 to-transparent">
+<div class="flex justify-between items-center mb-8">
+<div>
+<h2 class="font-h2 text-on-surface text-2xl">Create New Journey</h2>
+<p class="text-on-surface-variant font-body-sm">Configure your enterprise travel plan</p>
+</div>
+<button class="p-2 hover:bg-slate-100 rounded-full transition-all active:scale-95">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="flex items-center justify-between px-2 relative">
+<div class="absolute top-1/2 left-0 w-full h-[2px] bg-slate-200 -translate-y-1/2 z-0"></div>
+<div class="absolute top-1/2 left-0 w-[50%] h-[2px] bg-primary -translate-y-1/2 z-0"></div>
+<div class="relative z-10 flex flex-col items-center gap-2 group">
+<div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm shadow-lg shadow-primary/20">1</div>
+<span class="text-[10px] font-label-caps text-primary uppercase">Destination</span>
+</div>
+<div class="relative z-10 flex flex-col items-center gap-2">
+<div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm shadow-lg shadow-primary/20 ring-4 ring-white/50">2</div>
+<span class="text-[10px] font-label-caps text-primary uppercase">Preferences</span>
+</div>
+<div class="relative z-10 flex flex-col items-center gap-2 opacity-40">
+<div class="w-10 h-10 rounded-full bg-slate-300 text-slate-600 flex items-center justify-center font-bold text-sm">3</div>
+<span class="text-[10px] font-label-caps text-slate-500 uppercase">Collaborators</span>
+</div>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto px-8 py-4 space-y-8">
+<section>
+<label class="block font-label-caps text-on-surface-variant mb-4 uppercase tracking-wider">Select Trip Type</label>
+<div class="grid grid-cols-3 gap-4">
+<label class="relative cursor-pointer group">
+<input checked="" class="peer sr-only" name="trip_type" type="radio"/>
+<div class="p-4 rounded-2xl glass-card border-2 border-transparent peer-checked:border-primary peer-checked:bg-primary/5 transition-all flex flex-col items-center text-center gap-3">
+<span class="material-symbols-outlined text-3xl text-primary" data-weight="fill">business_center</span>
+<span class="font-h3 text-sm">Business</span>
+</div>
+</label>
+<label class="relative cursor-pointer group">
+<input class="peer sr-only" name="trip_type" type="radio"/>
+<div class="p-4 rounded-2xl glass-card border-2 border-transparent peer-checked:border-primary peer-checked:bg-primary/5 transition-all flex flex-col items-center text-center gap-3">
+<span class="material-symbols-outlined text-3xl text-slate-400 group-hover:text-primary transition-colors">person</span>
+<span class="font-h3 text-sm">Solo</span>
+</div>
+</label>
+<label class="relative cursor-pointer group">
+<input class="peer sr-only" name="trip_type" type="radio"/>
+<div class="p-4 rounded-2xl glass-card border-2 border-transparent peer-checked:border-primary peer-checked:bg-primary/5 transition-all flex flex-col items-center text-center gap-3">
+<span class="material-symbols-outlined text-3xl text-slate-400 group-hover:text-primary transition-colors">family_restroom</span>
+<span class="font-h3 text-sm">Family</span>
+</div>
+</label>
+</div>
+</section>
+<section>
+<div class="flex justify-between items-end mb-4">
+<label class="block font-label-caps text-on-surface-variant uppercase tracking-wider">Estimated Budget</label>
+<span class="font-h3 text-primary text-xl">$12,500</span>
+</div>
+<div class="relative h-10 flex items-center">
+<div class="absolute w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+<div class="h-full w-[65%] bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full"></div>
+</div>
+<input class="absolute w-full appearance-none bg-transparent pointer-events-auto h-2 cursor-pointer z-20" max="50000" min="1000" type="range" value="12500"/>
+</div>
+<div class="flex justify-between mt-2">
+<span class="text-[10px] text-slate-400 font-label-caps">$1k</span>
+<span class="text-[10px] text-slate-400 font-label-caps">$50k</span>
+</div>
+</section>
+<div class="grid grid-cols-2 gap-6">
+<section>
+<label class="block font-label-caps text-on-surface-variant mb-2 uppercase tracking-wider">Preference</label>
+<select class="w-full p-4 bg-white/50 border border-outline-variant rounded-2xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-sm appearance-none">
+<option>Luxury Experience</option>
+<option>Sustainable / Eco</option>
+<option>Adventure Focused</option>
+</select>
+</section>
+<section>
+<label class="block font-label-caps text-on-surface-variant mb-2 uppercase tracking-wider">Currency</label>
+<select class="w-full p-4 bg-white/50 border border-outline-variant rounded-2xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-sm appearance-none">
+<option>USD ($)</option>
+<option>EUR (€)</option>
+<option>GBP (£)</option>
+</select>
+</section>
+</div>
+</div>
+<div class="px-8 py-6 bg-white/50 flex items-center justify-between border-t border-white/40">
+<button class="flex items-center gap-2 px-6 py-3 text-slate-500 font-h3 text-sm hover:text-on-surface transition-colors active:scale-95">
+<span class="material-symbols-outlined">arrow_back</span>
+<span>Back</span>
+</button>
+<div class="flex gap-4">
+<button class="px-6 py-3 text-primary font-h3 text-sm hover:bg-primary/5 rounded-xl transition-all active:scale-95">
+                        Save Draft
+                    </button>
+<button class="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-h3 text-sm rounded-xl shadow-lg shadow-blue-500/30 hover:brightness-110 transition-all active:scale-95 flex items-center gap-2">
+<span>Next Step</span>
+<span class="material-symbols-outlined text-lg">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</body></html>
