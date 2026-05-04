@@ -216,10 +216,10 @@ const Dashboard = () => {
                       </div>
                       
                       <button 
-                        onClick={() => navigate(`/itinerary/${trip.id}`)} 
+                        onClick={() => navigate(`/trip/${trip.id}`)} 
                         className="text-blue-600 font-black text-sm hover:underline"
                       >
-                        {trip.travelType === 'Business' ? 'View Itinerary' : 'Complete Bookings'}
+                        Enter Workspace
                       </button>
                     </div>
                   </div>

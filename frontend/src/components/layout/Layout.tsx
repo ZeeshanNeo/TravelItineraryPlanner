@@ -1,11 +1,11 @@
 import { useState, useEffect, type ReactNode } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   LayoutDashboard, Map, Plane,
   CreditCard, Users, FolderOpen,
   LogOut, Menu, X, Settings, Search, Plus,
   User, HelpCircle,
-  ChevronRight
+  ChevronRight, Home
 } from 'lucide-react';
 import { useSearch } from '../../context/SearchContext';
 import { authService } from '../../services/auth.service';
@@ -20,6 +20,8 @@ interface LayoutProps {
 const Layout = ({ children, showNav = true }: LayoutProps) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { id: tripId } = useParams<{ id: string }>();
+  const isTripContext = location.pathname.startsWith('/trip/') && tripId;
   const isSmallScreen = useIsSmallScreen();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -47,14 +49,23 @@ const Layout = ({ children, showNav = true }: LayoutProps) => {
     }
   };
 
-  const navItems = [
+  const globalNavItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { name: 'Itinerary', path: '/itinerary', icon: Map },
-    { name: 'Bookings', path: '/bookings', icon: Plane },
-    { name: 'Expenses', path: '/expenses', icon: CreditCard },
-    { name: 'Collaboration', path: '/collaboration', icon: Users },
-    { name: 'Vault', path: '/vault', icon: FolderOpen },
+    { name: 'Itineraries', path: '/itinerary', icon: Map },
+    { name: 'Global Bookings', path: '/bookings', icon: Plane },
+    { name: 'Global Expenses', path: '/expenses', icon: CreditCard },
   ];
+
+  const tripNavItems = [
+    { name: 'Trip Manifest', path: `/trip/${tripId}`, icon: LayoutDashboard },
+    { name: 'Schedule', path: `/trip/${tripId}/schedule`, icon: Map },
+    { name: 'Logistics', path: `/trip/${tripId}/logistics`, icon: Plane },
+    { name: 'Budget', path: `/trip/${tripId}/budget`, icon: CreditCard },
+    { name: 'Collaboration', path: `/trip/${tripId}/collaboration`, icon: Users },
+    { name: 'Vault', path: `/trip/${tripId}/vault`, icon: FolderOpen },
+  ];
+
+  const navItems = isTripContext ? tripNavItems : globalNavItems;
 
   if (!showNav) {
     return <div className="min-h-screen bg-mesh text-on-background font-body-md animate-fade-in">{children}</div>;
@@ -101,8 +112,18 @@ const Layout = ({ children, showNav = true }: LayoutProps) => {
         <nav className="flex-1 px-4 space-y-2.5 overflow-y-auto no-scrollbar py-6">
           <p className={`px-4 text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.3em] mb-6 transition-all duration-300
             ${isCollapsed && !isSmallScreen ? 'opacity-0 scale-0' : 'opacity-100 scale-100'}`}>
-            Intelligence Hub
+            {isTripContext ? 'Trip Workspace' : 'Intelligence Hub'}
           </p>
+
+          {isTripContext && !isCollapsed && (
+            <button 
+              onClick={() => navigate('/dashboard')}
+              className="mx-4 mb-6 flex items-center gap-3 px-4 py-3 bg-secondary/50 rounded-xl text-xs font-black text-primary uppercase tracking-widest hover:bg-secondary transition-all group"
+            >
+              <Home size={14} className="group-hover:scale-110 transition-transform" />
+              Return to All Trips
+            </button>
+          )}
           
           {navItems.map((item) => {
             const isActive = location.pathname === item.path || (item.path !== '/dashboard' && location.pathname.startsWith(item.path));

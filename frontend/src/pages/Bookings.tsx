@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { 
   Download, Plus, Filter, Loader2,
   Inbox
@@ -13,6 +14,7 @@ import DocumentList from '../components/bookings/DocumentList';
 import { useSearch } from '../context/SearchContext';
 
 const Bookings = () => {
+  const { id: tripId } = useParams<{ id: string }>();
   const [bookings, setBookings] = useState<BookingResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -31,6 +33,7 @@ const Bookings = () => {
     try {
       setLoading(true);
       const params: any = {};
+      if (tripId) params.tripId = tripId;
       if (filter !== 'all') params.status = filter;
       if (categoryFilter !== 'all') params.category = categoryFilter;
       
@@ -103,8 +106,12 @@ const Bookings = () => {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
           <div>
-            <h1 className="text-5xl font-black text-foreground tracking-tighter leading-none">Your Bookings</h1>
-            <p className="text-muted-foreground mt-4 text-xl font-medium">Manage tickets, reservations, and confirmations.</p>
+            <h1 className="text-5xl font-black text-foreground tracking-tighter leading-none">
+              {tripId ? 'Trip Logistics' : 'Your Bookings'}
+            </h1>
+            <p className="text-muted-foreground mt-4 text-xl font-medium">
+              {tripId ? 'Management manifest for your active journey.' : 'Manage tickets, reservations, and confirmations.'}
+            </p>
           </div>
           <div className="flex items-center gap-4">
             <Button 

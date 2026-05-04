@@ -206,7 +206,7 @@ const Itinerary = () => {
               return (
                 <div 
                   key={itinerary.id} 
-                  onClick={() => navigate(`/itinerary/${itinerary.id}`)}
+                  onClick={() => navigate(`/trip/${itinerary.id}`)}
                   className="group enterprise-surface bg-card dark:bg-slate-900/50 rounded-[3.5rem] overflow-hidden shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] border border-border dark:border-white/5 cursor-pointer flex flex-col h-full motion-card-enter"
                 >
                   <div className="relative h-80 overflow-hidden">

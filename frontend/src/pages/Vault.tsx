@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import { 
   FolderOpen, Shield, Phone, Info, ListChecks, 
@@ -12,6 +13,7 @@ import type { TravelDocument, EmergencyContact, LocalInfoNote, PackingList, Chec
 import Button from '../components/shared/Button';
 
 const Vault: React.FC = () => {
+  const { id: tripId } = useParams<{ id: string }>();
   const [trips, setTrips] = useState<TripResponse[]>([]);
   const [selectedTripId, setSelectedTripId] = useState<string>('');
   const [documents, setDocuments] = useState<TravelDocument[]>([]);
@@ -22,8 +24,12 @@ const Vault: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'docs' | 'contacts' | 'info' | 'lists'>('docs');
 
   useEffect(() => {
-    fetchTrips();
-  }, []);
+    if (tripId) {
+      setSelectedTripId(tripId);
+    } else {
+      fetchTrips();
+    }
+  }, [tripId]);
 
   useEffect(() => {
     if (selectedTripId) {
@@ -85,27 +91,33 @@ const Vault: React.FC = () => {
       <div className="space-y-10">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <h1 className="text-4xl font-black text-foreground tracking-tight mb-2">Secure Vault</h1>
-            <p className="text-muted-foreground font-bold">Your essential travel documents and local intelligence.</p>
+            <h1 className="text-4xl font-black text-foreground tracking-tight mb-2">
+              {tripId ? 'Trip Vault' : 'Secure Vault'}
+            </h1>
+            <p className="text-muted-foreground font-bold">
+              {tripId ? 'Essential documents and intelligence for your current journey.' : 'Your essential travel documents and local intelligence.'}
+            </p>
           </div>
           
-          <div className="w-full md:w-80">
-            <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2 block ml-1">Journey Focus</label>
-            <div className="relative">
-              <select
-                value={selectedTripId}
-                onChange={(e) => setSelectedTripId(e.target.value)}
-                className="w-full h-14 bg-card border-2 border-border rounded-2xl px-6 font-bold text-foreground focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all appearance-none shadow-sm"
-              >
-                {trips.map(trip => (
-                  <option key={trip.id} value={trip.id}>{trip.title}</option>
-                ))}
-              </select>
-              <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
-                <FolderOpen size={18} />
+          {!tripId && (
+            <div className="w-full md:w-80">
+              <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2 block ml-1">Journey Focus</label>
+              <div className="relative">
+                <select
+                  value={selectedTripId}
+                  onChange={(e) => setSelectedTripId(e.target.value)}
+                  className="w-full h-14 bg-card border-2 border-border rounded-2xl px-6 font-bold text-foreground focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all appearance-none shadow-sm"
+                >
+                  {trips.map(trip => (
+                    <option key={trip.id} value={trip.id}>{trip.title}</option>
+                  ))}
+                </select>
+                <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
+                  <FolderOpen size={18} />
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Tabs */}

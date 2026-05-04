@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { 
   Filter, Download, ChevronDown, Wallet, TrendingUp, PieChart
 } from 'lucide-react';
@@ -8,13 +9,19 @@ import { tripService } from '../services/trip.service';
 import type { TripResponse } from '../services/trip.service';
 
 const Expenses = () => {
+  const { id: tripId } = useParams<{ id: string }>();
   const [trips, setTrips] = useState<TripResponse[]>([]);
   const [selectedTripId, setSelectedTripId] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchTrips();
-  }, []);
+    if (tripId) {
+      setSelectedTripId(tripId);
+      setIsLoading(false);
+    } else {
+      fetchTrips();
+    }
+  }, [tripId]);
 
   const fetchTrips = async () => {
     try {
@@ -40,34 +47,46 @@ const Expenses = () => {
                <Wallet size={16} className="text-primary" />
                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Ledger / Treasury</span>
             </div>
-            <h1 className="text-5xl md:text-7xl font-black text-foreground tracking-tighter leading-none">Financial Control</h1>
-            <p className="text-muted-foreground mt-6 text-xl font-medium max-w-xl">Execute comprehensive fiscal oversight and cost analysis for your premium journeys.</p>
+            <h1 className="text-5xl md:text-7xl font-black text-foreground tracking-tighter leading-none">
+              {tripId ? 'Trip Ledger' : 'Financial Control'}
+            </h1>
+            <p className="text-muted-foreground mt-6 text-xl font-medium max-w-xl">
+              {tripId ? 'Comprehensive fiscal oversight for your current workspace.' : 'Execute comprehensive fiscal oversight and cost analysis for your premium journeys.'}
+            </p>
           </div>
           
-          <div className="flex items-center gap-4">
-            <div className="relative group">
-              <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none text-muted-foreground group-focus-within:text-primary transition-colors">
-                <Filter size={18} />
+          {!tripId && (
+            <div className="flex items-center gap-4">
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none text-muted-foreground group-focus-within:text-primary transition-colors">
+                  <Filter size={18} />
+                </div>
+                <select
+                  className="appearance-none bg-card border border-border rounded-2xl pl-14 pr-12 py-4 text-sm font-bold text-foreground focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all cursor-pointer shadow-sm min-w-[240px]"
+                  value={selectedTripId}
+                  onChange={(e) => setSelectedTripId(e.target.value)}
+                >
+                  {trips.map(trip => (
+                    <option key={trip.id} value={trip.id}>{trip.title || trip.destination}</option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-5 flex items-center pointer-events-none text-muted-foreground">
+                  <ChevronDown size={18} />
+                </div>
               </div>
-              <select
-                className="appearance-none bg-card border border-border rounded-2xl pl-14 pr-12 py-4 text-sm font-bold text-foreground focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all cursor-pointer shadow-sm min-w-[240px]"
-                value={selectedTripId}
-                onChange={(e) => setSelectedTripId(e.target.value)}
-              >
-                {trips.map(trip => (
-                  <option key={trip.id} value={trip.id}>{trip.title || trip.destination}</option>
-                ))}
-              </select>
-              <div className="absolute inset-y-0 right-5 flex items-center pointer-events-none text-muted-foreground">
-                <ChevronDown size={18} />
-              </div>
+              
+              <button className="flex items-center gap-3 px-8 py-4 bg-card border border-border rounded-2xl text-sm font-bold text-foreground hover:bg-muted transition-all shadow-sm active:scale-95">
+                <Download size={20} className="text-primary" />
+                Download Audit
+              </button>
             </div>
-            
+          )}
+          {tripId && (
             <button className="flex items-center gap-3 px-8 py-4 bg-card border border-border rounded-2xl text-sm font-bold text-foreground hover:bg-muted transition-all shadow-sm active:scale-95">
               <Download size={20} className="text-primary" />
-              Download Audit
+              Download Trip Audit
             </button>
-          </div>
+          )}
         </div>
 
         {/* Intelligence Quick Stats (Optional but premium) */}

@@ -49,7 +49,7 @@ function App() {
                   </ProtectedRoute>
                 } />
 
-                {/* Protected routes - require authentication */}
+                {/* Global Workspace Routes */}
                 <Route path="/dashboard" element={
                   <ProtectedRoute>
                     <Dashboard />
@@ -60,39 +60,9 @@ function App() {
                     <Itinerary />
                   </ProtectedRoute>
                 } />
-                <Route path="/itinerary/:id" element={
-                  <ProtectedRoute>
-                    <ItineraryDetail />
-                  </ProtectedRoute>
-                } />
                 <Route path="/plan-trip" element={
                   <ProtectedRoute>
                     <PlanTrip />
-                  </ProtectedRoute>
-                } />
-                <Route path="/bookings" element={
-                  <ProtectedRoute>
-                    <Bookings />
-                  </ProtectedRoute>
-                } />
-                <Route path="/bookings/amalfi/:id" element={
-                  <ProtectedRoute>
-                    <AmalfiBookings />
-                  </ProtectedRoute>
-                } />
-                <Route path="/expenses" element={
-                  <ProtectedRoute>
-                    <Expenses />
-                  </ProtectedRoute>
-                } />
-                <Route path="/collaboration" element={
-                  <ProtectedRoute>
-                    <Collaboration />
-                  </ProtectedRoute>
-                } />
-                <Route path="/vault" element={
-                  <ProtectedRoute>
-                    <Vault />
                   </ProtectedRoute>
                 } />
                 <Route path="/profile" element={
@@ -105,6 +75,51 @@ function App() {
                     <Settings />
                   </ProtectedRoute>
                 } />
+
+                {/* Trip Hub Workspace Routes (Contextual) */}
+                <Route path="/trip/:id" element={
+                  <ProtectedRoute>
+                    <AmalfiBookings />
+                  </ProtectedRoute>
+                } />
+                <Route path="/trip/:id/schedule" element={
+                  <ProtectedRoute>
+                    <ItineraryDetail />
+                  </ProtectedRoute>
+                } />
+                <Route path="/trip/:id/logistics" element={
+                  <ProtectedRoute>
+                    <Bookings />
+                  </ProtectedRoute>
+                } />
+                <Route path="/trip/:id/budget" element={
+                  <ProtectedRoute>
+                    <Expenses />
+                  </ProtectedRoute>
+                } />
+                <Route path="/trip/:id/collaboration" element={
+                  <ProtectedRoute>
+                    <Collaboration />
+                  </ProtectedRoute>
+                } />
+                <Route path="/trip/:id/vault" element={
+                  <ProtectedRoute>
+                    <Vault />
+                  </ProtectedRoute>
+                } />
+
+                {/* Legacy/Global Fallbacks */}
+                <Route path="/bookings" element={
+                  <ProtectedRoute>
+                    <Bookings />
+                  </ProtectedRoute>
+                } />
+                <Route path="/expenses" element={
+                  <ProtectedRoute>
+                    <Expenses />
+                  </ProtectedRoute>
+                } />
+                <Route path="/itinerary/:id" element={<Navigate to="/trip/:id/schedule" replace />} />
 
                 {/* Default route */}
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
