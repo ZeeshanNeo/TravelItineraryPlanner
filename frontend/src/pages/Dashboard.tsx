@@ -245,14 +245,16 @@ const Dashboard = () => {
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Countries Visited</p>
               <p className="text-5xl font-black text-blue-600">{stats?.countriesVisited || '0'}</p>
            </div>
-           <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm enterprise-surface">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Travel Days</p>
-              <p className="text-5xl font-black text-blue-600">{stats?.totalTravelDays || '0'}</p>
-           </div>
-           <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm enterprise-surface">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Exp. Savings</p>
-              <p className="text-5xl font-black text-blue-600">${stats ? (stats.totalSpend / 10).toFixed(1) : '0.0'}k</p>
-           </div>
+            <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm enterprise-surface">
+               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Travel Days</p>
+               <p className="text-5xl font-black text-blue-600">{stats?.totalTravelDays || '0'}</p>
+            </div>
+            <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm enterprise-surface">
+               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Exp. Savings</p>
+               <p className="text-5xl font-black text-blue-600">
+                 ${stats ? (stats.totalBudget >= 1000 ? (stats.totalBudget / 1000).toFixed(1) + 'k' : stats.totalBudget.toFixed(0)) : '0.0'}
+               </p>
+            </div>
         </div>
 
         {editingTrip && (

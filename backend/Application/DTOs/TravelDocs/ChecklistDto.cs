@@ -29,4 +29,9 @@ namespace Application.DTOs.TravelDocs
         public string Task { get; set; }
         public DateTime? DueDate { get; set; }
     }
+
+    public class UpdateChecklistItemRequest
+    {
+        public bool IsCompleted { get; set; }
+    }
 }

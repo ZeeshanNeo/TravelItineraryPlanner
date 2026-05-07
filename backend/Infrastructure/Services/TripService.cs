@@ -14,10 +14,23 @@ namespace Infrastructure.Services;
 public class TripService : ITripService
 {
     private readonly ITripRepository _tripRepository;
+    private readonly IExpenseRepository _expenseRepository;
+    private readonly ITripMemberRepository _tripMemberRepository;
+    private readonly ITravelDocumentRepository _travelDocumentRepository;
+    private readonly ITripBudgetRepository _tripBudgetRepository;
 
-    public TripService(ITripRepository tripRepository)
+    public TripService(
+        ITripRepository tripRepository, 
+        IExpenseRepository expenseRepository,
+        ITripMemberRepository tripMemberRepository,
+        ITravelDocumentRepository travelDocumentRepository,
+        ITripBudgetRepository tripBudgetRepository)
     {
         _tripRepository = tripRepository;
+        _expenseRepository = expenseRepository;
+        _tripMemberRepository = tripMemberRepository;
+        _travelDocumentRepository = travelDocumentRepository;
+        _tripBudgetRepository = tripBudgetRepository;
     }
 
     public async Task<TripResponse> CreateTripAsync(CreateTripRequest request, Guid userId, CancellationToken cancellationToken = default)
@@ -128,6 +141,37 @@ public class TripService : ITripService
             totalDays += (trip.EndDate - trip.StartDate).Days + 1;
         }
 
+        // Real calculations
+        decimal totalSpend = 0;
+        decimal totalBudget = 0;
+        int totalDocuments = 0;
+
+        foreach (var trip in trips.Where(t => !t.IsArchived))
+        {
+            var expenses = await _expenseRepository.GetByTripIdAsync(trip.Id, cancellationToken);
+            totalSpend += expenses.Sum(e => e.Amount);
+
+            var budget = await _tripBudgetRepository.GetByTripIdAsync(trip.Id, cancellationToken);
+            if (budget != null)
+            {
+                totalBudget += budget.TotalAmount;
+            }
+
+            var docs = await _travelDocumentRepository.GetByTripIdAsync(trip.Id);
+            totalDocuments += docs.Count();
+        }
+
+        // For collaborators, we might want unique users across all trips (excluding self)
+        var uniqueCollaborators = new HashSet<Guid>();
+        foreach (var trip in trips.Where(t => !t.IsArchived))
+        {
+            var members = await _tripMemberRepository.GetByTripIdAsync(trip.Id);
+            foreach (var m in members)
+            {
+                if (m.UserId != userId) uniqueCollaborators.Add(m.UserId);
+            }
+        }
+
         return new GlobalStatisticsResponse
         {
             TotalTrips = activeTrips,
@@ -135,9 +179,10 @@ public class TripService : ITripService
             CompletedTrips = completedTrips,
             CountriesVisited = countries.Count,
             TotalTravelDays = totalDays,
-            TotalSpend = activeTrips * 1200.50m, // Placeholder until Expense integration
-            TotalCollaborators = activeTrips * 2, // Placeholder
-            SecureDocumentsCount = activeTrips * 3 // Placeholder
+            TotalSpend = totalSpend,
+            TotalBudget = totalBudget,
+            TotalCollaborators = uniqueCollaborators.Count,
+            SecureDocumentsCount = totalDocuments
         };
     }
 

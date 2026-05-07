@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { 
+import {
   Mail, Lock, Globe,
   ShieldCheck, ChevronRight,
   Plane, User, Phone
@@ -17,15 +17,15 @@ const Login = ({ initialMode = 'login' }: LoginProps) => {
   const location = useLocation();
   const { showToast } = useToast();
   const [mode, setMode] = useState<'login' | 'signup'>(initialMode);
-  
+
   useEffect(() => {
     if (location.pathname === '/register') setMode('signup');
     else if (location.pathname === '/login') setMode('login');
   }, [location.pathname]);
 
-  const [formData, setFormData] = useState({ 
-    email: '', 
-    password: '', 
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
     firstName: '',
     lastName: '',
     phoneNumber: ''
@@ -71,14 +71,14 @@ const Login = ({ initialMode = 'login' }: LoginProps) => {
         <div className="absolute inset-0 bg-[#0a0c12]"></div>
         <div className="absolute inset-0 bg-mesh opacity-30 mix-blend-overlay"></div>
         <div className="absolute inset-0 bg-gradient-to-tr from-[#0a0c12] via-[#0f172a]/40 to-[#0a0c12]"></div>
-        
+
         {/* Parallax / Floating Intelligence */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
           <Globe className="absolute -top-32 -left-32 w-[600px] h-[600px] text-primary/10 animate-pulse-slow" />
           <div className="absolute top-[20%] right-[10%] w-px h-64 bg-gradient-to-b from-transparent via-primary/40 to-transparent"></div>
           <div className="absolute bottom-[20%] left-[20%] w-px h-96 bg-gradient-to-b from-transparent via-indigo-500/20 to-transparent"></div>
         </div>
-        
+
         {/* Animated Enterprise Orbs */}
         <div className="absolute top-[-20%] right-[-10%] w-[800px] h-[800px] bg-primary/10 rounded-full blur-[150px] animate-pulse duration-[10000ms]"></div>
         <div className="absolute bottom-[-20%] left-[-10%] w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-[130px] animate-pulse duration-[8000ms]" style={{ animationDelay: '3s' }}></div>
@@ -108,7 +108,7 @@ const Login = ({ initialMode = 'login' }: LoginProps) => {
 
           <div className="grid grid-cols-2 gap-8">
             <div className="group space-y-4 p-8 rounded-[2.5rem] bg-white/[0.03] border border-white/10 backdrop-blur-xl hover:bg-white/[0.06] transition-all duration-500 hover:-translate-y-2">
-              <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
                 <ShieldCheck className="w-6 h-6" />
               </div>
               <h3 className="text-white text-lg font-black tracking-tight">Elite Vault</h3>
@@ -129,7 +129,7 @@ const Login = ({ initialMode = 'login' }: LoginProps) => {
           <div className="premium-glass-dark p-12 md:p-16 rounded-[4rem] border border-white/10 shadow-[0_80px_150px_-30px_rgba(0,0,0,0.7)] relative overflow-hidden group">
             {/* Ambient Background Glow inside form */}
             <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/10 rounded-full blur-[80px] group-hover:bg-primary/20 transition-colors duration-1000"></div>
-            
+
             {/* Form Header */}
             <div className="mb-14 relative z-10">
               <div className="lg:hidden flex items-center gap-4 mb-10">
@@ -148,19 +148,17 @@ const Login = ({ initialMode = 'login' }: LoginProps) => {
 
             {/* Mode Toggle */}
             <div className="flex p-2 bg-white/[0.03] rounded-2xl mb-12 border border-white/10 relative z-10">
-              <button 
+              <button
                 onClick={() => { setMode('login'); navigate('/login', { replace: true }); }}
-                className={`flex-1 py-4 text-xs font-black uppercase tracking-widest rounded-xl transition-all duration-500 ${
-                  mode === 'login' ? 'bg-white text-slate-950 shadow-2xl scale-100' : 'text-slate-500 hover:text-slate-300 scale-95'
-                }`}
+                className={`flex-1 py-4 text-xs font-black uppercase tracking-widest rounded-xl transition-all duration-500 ${mode === 'login' ? 'bg-white text-slate-950 shadow-2xl scale-100' : 'text-slate-500 hover:text-slate-300 scale-95'
+                  }`}
               >
                 Sign In
               </button>
-              <button 
+              <button
                 onClick={() => { setMode('signup'); navigate('/register', { replace: true }); }}
-                className={`flex-1 py-4 text-xs font-black uppercase tracking-widest rounded-xl transition-all duration-500 ${
-                  mode === 'signup' ? 'bg-white text-slate-950 shadow-2xl scale-100' : 'text-slate-500 hover:text-slate-300 scale-95'
-                }`}
+                className={`flex-1 py-4 text-xs font-black uppercase tracking-widest rounded-xl transition-all duration-500 ${mode === 'signup' ? 'bg-white text-slate-950 shadow-2xl scale-100' : 'text-slate-500 hover:text-slate-300 scale-95'
+                  }`}
               >
                 Sign Up
               </button>
@@ -174,14 +172,14 @@ const Login = ({ initialMode = 'login' }: LoginProps) => {
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] ml-1">Given Name</label>
                       <div className="relative group/input">
                         <User className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within/input:text-primary transition-colors" />
-                        <input 
+                        <input
                           name="firstName"
-                          type="text" 
+                          type="text"
                           required
                           value={formData.firstName}
                           onChange={handleChange}
-                          className="w-full bg-white/[0.03] border border-white/10 rounded-[1.25rem] py-5 pl-14 pr-6 text-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white/[0.06] transition-all placeholder:text-slate-600 font-bold text-sm" 
-                          placeholder="Alex" 
+                          className="w-full bg-white/[0.03] border border-white/10 rounded-[1.25rem] py-5 pl-14 pr-6 text-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white/[0.06] transition-all placeholder:text-slate-600 font-bold text-sm"
+                          placeholder="Alex"
                         />
                       </div>
                     </div>
@@ -189,14 +187,14 @@ const Login = ({ initialMode = 'login' }: LoginProps) => {
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] ml-1">Surname</label>
                       <div className="relative group/input">
                         <User className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within/input:text-primary transition-colors" />
-                        <input 
+                        <input
                           name="lastName"
-                          type="text" 
+                          type="text"
                           required
                           value={formData.lastName}
                           onChange={handleChange}
-                          className="w-full bg-white/[0.03] border border-white/10 rounded-[1.25rem] py-5 pl-14 pr-6 text-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white/[0.06] transition-all placeholder:text-slate-600 font-bold text-sm" 
-                          placeholder="Voyager" 
+                          className="w-full bg-white/[0.03] border border-white/10 rounded-[1.25rem] py-5 pl-14 pr-6 text-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white/[0.06] transition-all placeholder:text-slate-600 font-bold text-sm"
+                          placeholder="Voyager"
                         />
                       </div>
                     </div>
@@ -206,13 +204,13 @@ const Login = ({ initialMode = 'login' }: LoginProps) => {
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] ml-1">Terminal Contact</label>
                     <div className="relative group/input">
                       <Phone className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within/input:text-primary transition-colors" />
-                      <input 
+                      <input
                         name="phoneNumber"
-                        type="tel" 
+                        type="tel"
                         value={formData.phoneNumber}
                         onChange={handleChange}
-                        className="w-full bg-white/[0.03] border border-white/10 rounded-[1.25rem] py-5 pl-14 pr-6 text-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white/[0.06] transition-all placeholder:text-slate-600 font-bold text-sm" 
-                        placeholder="+1 (555) 000-0000" 
+                        className="w-full bg-white/[0.03] border border-white/10 rounded-[1.25rem] py-5 pl-14 pr-6 text-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white/[0.06] transition-all placeholder:text-slate-600 font-bold text-sm"
+                        placeholder="+1 (555) 000-0000"
                       />
                     </div>
                   </div>
@@ -223,7 +221,7 @@ const Login = ({ initialMode = 'login' }: LoginProps) => {
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] ml-1">Identification Key</label>
                 <div className="relative group/input">
                   <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within/input:text-primary transition-colors" />
-                  <input 
+                  <input
                     name="email"
                     type="email"
                     required
@@ -239,12 +237,12 @@ const Login = ({ initialMode = 'login' }: LoginProps) => {
                 <div className="flex justify-between items-center px-1">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Access Code</label>
                   {mode === 'login' && (
-                    <Link to="/forgot-password" title="Recovery" className="text-[10px] font-black text-primary hover:text-blue-400 uppercase tracking-widest transition-colors">Recovery</Link>
+                    <Link to="/forgot-password" title="Recovery" className="text-[10px] font-black text-white hover:text-blue-400 uppercase tracking-widest transition-colors">Recovery</Link>
                   )}
                 </div>
                 <div className="relative group/input">
                   <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within/input:text-primary transition-colors" />
-                  <input 
+                  <input
                     name="password"
                     type="password"
                     required
@@ -256,10 +254,10 @@ const Login = ({ initialMode = 'login' }: LoginProps) => {
                 </div>
               </div>
 
-              <button 
+              <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-primary hover:bg-blue-600 text-white font-black py-6 rounded-[1.5rem] shadow-[0_20px_40px_rgba(var(--primary),0.3)] transition-all flex items-center justify-center gap-4 group active:scale-[0.98] disabled:opacity-50 mt-12 overflow-hidden relative"
+                className="w-full bg-white hover:bg-blue-600 hover:text-white font-black py-6 rounded-[1.5rem] shadow-[0_20px_40px_rgba(var(--primary),0.3)] transition-all flex items-center justify-center gap-4 group active:scale-[0.98] disabled:opacity-50 mt-12 overflow-hidden relative"
               >
                 {isLoading ? (
                   <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
@@ -280,17 +278,17 @@ const Login = ({ initialMode = 'login' }: LoginProps) => {
               </p>
             </div>
           </div>
-          
+
           <div className="mt-12 flex items-center justify-center gap-10 text-slate-500 animate-in fade-in duration-1000 delay-700">
-             <div className="flex items-center gap-3">
-                <ShieldCheck size={18} className="text-primary" />
-                <span className="text-[10px] font-black uppercase tracking-[0.3em]">AES-256 SECURED</span>
-             </div>
-             <div className="w-1.5 h-1.5 bg-slate-800 rounded-full"></div>
-             <div className="flex items-center gap-3">
-                <Globe size={18} className="text-indigo-400" />
-                <span className="text-[10px] font-black uppercase tracking-[0.3em]">Global Intelligence</span>
-             </div>
+            <div className="flex items-center gap-3">
+              <ShieldCheck size={18} className="text-primary" />
+              <span className="text-[10px] font-black uppercase tracking-[0.3em]">AES-256 SECURED</span>
+            </div>
+            <div className="w-1.5 h-1.5 bg-slate-800 rounded-full"></div>
+            <div className="flex items-center gap-3">
+              <Globe size={18} className="text-indigo-400" />
+              <span className="text-[10px] font-black uppercase tracking-[0.3em]">Global Intelligence</span>
+            </div>
           </div>
         </div>
       </div>

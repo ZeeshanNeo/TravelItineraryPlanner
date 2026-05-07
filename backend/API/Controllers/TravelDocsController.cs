@@ -47,9 +47,9 @@ namespace API.Controllers
         }
 
         [HttpPut("packing-items/{itemId}")]
-        public async Task<IActionResult> UpdatePackingItem(Guid itemId, [FromBody] bool isPacked)
+        public async Task<IActionResult> UpdatePackingItem(Guid itemId, UpdatePackingItemRequest request)
         {
-            await _travelDocService.UpdatePackingItemAsync(itemId, isPacked);
+            await _travelDocService.UpdatePackingItemAsync(itemId, request.IsPacked);
             return NoContent();
         }
 
@@ -91,9 +91,9 @@ namespace API.Controllers
         }
 
         [HttpPut("checklist-items/{itemId}")]
-        public async Task<IActionResult> UpdateChecklistItem(Guid itemId, [FromBody] bool isCompleted)
+        public async Task<IActionResult> UpdateChecklistItem(Guid itemId, UpdateChecklistItemRequest request)
         {
-            await _travelDocService.UpdateChecklistItemAsync(itemId, isCompleted);
+            await _travelDocService.UpdateChecklistItemAsync(itemId, request.IsCompleted);
             return NoContent();
         }
 

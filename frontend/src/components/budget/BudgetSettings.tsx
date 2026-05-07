@@ -16,7 +16,7 @@ const BudgetSettings: React.FC<BudgetSettingsProps> = ({ budget, onSave, onClose
   const [totalAmount, setTotalAmount] = useState(budget?.totalAmount || 0);
   const [currency, setCurrency] = useState(budget?.currency || 'USD');
   const [categoryBudgets, setCategoryBudgets] = useState<Record<string, number>>(
-    budget?.categoryBudgets.reduce((acc, cb) => ({ ...acc, [cb.category]: cb.amount }), {}) || {}
+    budget?.categoryBudgets?.reduce((acc, cb) => ({ ...acc, [cb.category]: cb.amount }), {}) || {}
   );
   const [loading, setLoading] = useState(false);
 

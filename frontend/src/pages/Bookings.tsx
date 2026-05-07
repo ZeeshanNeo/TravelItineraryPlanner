@@ -34,10 +34,19 @@ const Bookings = () => {
       setLoading(true);
       const params: any = {};
       if (tripId) params.tripId = tripId;
-      if (filter !== 'all') params.status = filter;
+      if (filter !== 'all' && filter !== 'Archived') params.status = filter;
       if (categoryFilter !== 'all') params.category = categoryFilter;
+      if (filter === 'Archived') params.includeArchived = true;
       
-      const data = await bookingService.getBookings(params);
+      let data = await bookingService.getBookings(params);
+      
+      // Client-side filtering for strict 'Archived' view
+      if (filter === 'Archived') {
+        data = data.filter(b => b.isArchived);
+      } else {
+        data = data.filter(b => !b.isArchived);
+      }
+      
       setBookings(data);
     } catch (error) {
       console.error('Error fetching bookings:', error);
@@ -100,6 +109,50 @@ const Bookings = () => {
     setShowForm(true);
   };
 
+  const handleCalendarSync = () => {
+    // RFC 5545 iCalendar generation
+    const confirmedBookings = bookings.filter(b => b.status === 'Confirmed');
+    if (confirmedBookings.length === 0) {
+      alert('No confirmed bookings found for synchronization.');
+      return;
+    }
+
+    let icsContent = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Voyager Pro//Enterprise Logistics//EN',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH'
+    ];
+
+    confirmedBookings.forEach(booking => {
+      const start = new Date(booking.startDate || Date.now()).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+      const end = new Date(booking.endDate || booking.startDate || Date.now()).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+      
+      icsContent.push(
+        'BEGIN:VEVENT',
+        `UID:${booking.id}@voyagerpro.com`,
+        `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
+        `DTSTART:${start}`,
+        `DTEND:${end}`,
+        `SUMMARY:Voyager Pro: ${booking.title}`,
+        `LOCATION:${booking.location || ''}`,
+        `DESCRIPTION:${booking.description || ''}\\nConfirmation: ${booking.confirmationCode || 'N/A'}`,
+        'END:VEVENT'
+      );
+    });
+
+    icsContent.push('END:VCALENDAR');
+
+    const blob = new Blob([icsContent.join('\\r\\n')], { type: 'text/calendar;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob);
+    link.setAttribute('download', `Voyager_Pro_Manifest_${tripId || 'Global'}.ics`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <Layout>
       <div className="space-y-10 pb-20">
@@ -116,14 +169,15 @@ const Bookings = () => {
           <div className="flex items-center gap-4">
             <Button 
               variant="outline" 
-              className="h-16 px-8 rounded-2xl border-border text-muted-foreground font-black uppercase tracking-widest hover:bg-muted"
+              onClick={handleCalendarSync}
+              className="h-16 px-8 rounded-2xl border-border text-muted-foreground font-black uppercase tracking-widest hover:bg-muted active:scale-95 transition-all"
             >
               <Download className="w-5 h-5 mr-2" />
               Calendar Sync
             </Button>
             <Button 
               variant="primary" 
-              className="h-16 px-10 rounded-2xl shadow-2xl shadow-primary/30 flex items-center text-lg font-black uppercase tracking-widest"
+              className="h-16 px-10 rounded-2xl shadow-2xl shadow-primary/30 flex items-center text-lg font-black uppercase tracking-widest active:scale-95 transition-all"
               onClick={() => {
                 setEditingBooking(undefined);
                 setShowForm(true);
@@ -138,7 +192,7 @@ const Bookings = () => {
         {/* Filters */}
         <div className="flex flex-col lg:flex-row gap-8 lg:items-center justify-between">
           <div className="flex flex-wrap items-center gap-4">
-            {['all', 'Confirmed', 'Pending', 'Cancelled'].map((f) => (
+            {['all', 'Confirmed', 'Pending', 'Cancelled', 'Archived'].map((f) => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}

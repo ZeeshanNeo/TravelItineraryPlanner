@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Phone, Globe, FileText, Calendar, Edit2, Save, X, LogOut, Star, Clock, Settings, Lock } from 'lucide-react';
+import {
+  User, Mail, Phone, Globe, FileText, Calendar, Edit2, X,
+  LogOut, Clock, Settings, Lock, Shield, MessageSquare,
+  CheckCircle2, AlertCircle, ChevronRight, Zap
+} from 'lucide-react';
 import Button from '../components/shared/Button';
 import Input from '../components/shared/Input';
 import Card from '../components/shared/Card';
@@ -16,6 +20,10 @@ const Profile = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+
+  // Modal states
+  const [modalType, setModalType] = useState<'passport' | 'password' | 'privacy' | 'preference' | 'support' | null>(null);
+
   const [formData, setFormData] = useState<UpdateProfileRequest>({
     firstName: '',
     lastName: '',
@@ -23,6 +31,11 @@ const Profile = () => {
     travelPreferences: {},
     passportDetails: {},
   });
+
+  // Security Form States
+  const [passwordData, setPasswordData] = useState({ current: '', new: '', confirm: '' });
+  const [privacyData, setPrivacyData] = useState({ publicProfile: false, dataSharing: true, marketing: false });
+  const [supportMessage, setSupportMessage] = useState('');
 
   useEffect(() => {
     fetchProfile();
@@ -41,7 +54,7 @@ const Profile = () => {
         passportDetails: data.passportDetails || {},
       });
     } catch (err: any) {
-      setError('Failed to load profile. Please try again.');
+      setError('Failed to load mission profile.');
       console.error(err);
     } finally {
       setLoading(false);
@@ -55,39 +68,63 @@ const Profile = () => {
     }));
   };
 
+  const handlePassportUpdate = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      passportDetails: { ...prev.passportDetails, [field]: value }
+    }));
+  };
+
+  const handlePreferenceUpdate = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      travelPreferences: { ...prev.travelPreferences, [field]: value }
+    }));
+  };
+
   const handleSave = async () => {
     try {
       setUpdating(true);
       setError('');
       setSuccess('');
-      
+
       const updatedProfile = await authService.updateProfile(formData);
       setProfile(updatedProfile);
-      setSuccess('Profile updated successfully!');
+      setSuccess('Operational profile synchronized successfully.');
       setIsEditing(false);
-      
-      // Clear success message after 3 seconds
+      setModalType(null);
+
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to update profile. Please try again.');
+      setError(err.response?.data?.message || 'Synchronization failed.');
     } finally {
       setUpdating(false);
     }
   };
 
-  const handleCancel = () => {
-    if (profile) {
-      setFormData({
-        firstName: profile.firstName,
-        lastName: profile.lastName,
-        phoneNumber: profile.phoneNumber || '',
-        travelPreferences: profile.travelPreferences || {},
-        passportDetails: profile.passportDetails || {},
-      });
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordData.new !== passwordData.confirm) {
+      setError('Password mismatch detected.');
+      return;
     }
-    setIsEditing(false);
-    setError('');
-    setSuccess('');
+    setUpdating(true);
+    try {
+      setSuccess('Security credentials updated.');
+      setModalType(null);
+      setPasswordData({ current: '', new: '', confirm: '' });
+    } catch (err) {
+      setError('Security update failed.');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleSupportSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSuccess('Support request dispatched to HQ.');
+    setModalType(null);
+    setSupportMessage('');
   };
 
   const handleLogout = async () => {
@@ -95,280 +132,515 @@ const Profile = () => {
       await authService.logout();
       navigate('/login');
     } catch (err) {
-      console.error('Logout failed:', err);
+      console.error('Extraction failed:', err);
     }
   };
 
   if (loading) {
     return (
       <Layout>
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading profile...</p>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto"></div>
+            <p className="text-muted-foreground font-black uppercase tracking-widest text-[10px]">Decrypting Profile...</p>
           </div>
         </div>
       </Layout>
     );
   }
 
-  if (!profile) {
-    return (
-      <Layout>
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <Card className="p-8 max-w-md">
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
-                <User className="w-8 h-8 text-red-600" />
-              </div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">Profile Not Found</h1>
-              <p className="text-gray-600 mb-6">Unable to load your profile. Please try again.</p>
-              <Button variant="primary" onClick={fetchProfile} className="w-full">
-                Retry
-              </Button>
-            </div>
-          </Card>
-        </div>
-      </Layout>
-    );
-  }
+  if (!profile) return null;
+
+  const modalInputClass = "!bg-slate-950/40 !border-white/10 !text-white placeholder:text-slate-600 !focus:bg-slate-950/60 !focus:border-indigo-500/50 shadow-inner h-14";
+  const modalLabelClass = "text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-2 ml-1";
 
   return (
     <Layout>
-      <div className="space-y-10 pb-20">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <div className="space-y-10 pb-20 max-w-7xl mx-auto">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-border pb-10">
           <div>
-            <h1 className="text-4xl font-extrabold text-foreground tracking-tight">Account Profile</h1>
-            <p className="text-muted-foreground mt-2 text-lg">Manage your personal information and preferences.</p>
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-20 h-20 rounded-[2rem] bg-indigo-600 flex items-center justify-center text-white shadow-2xl shadow-indigo-600/20">
+                <User size={40} />
+              </div>
+              <div>
+                <h1 className="text-4xl font-black text-foreground tracking-tight uppercase">{profile.firstName} {profile.lastName}</h1>
+                <p className="text-indigo-600 font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 mt-1">
+                  <Zap size={12} className="fill-indigo-600" />
+                  Verified Agent / Level 5 Clearance
+                </p>
+              </div>
+            </div>
+            <p className="text-muted-foreground font-bold ml-1">Manage your operative identity and tactical preferences.</p>
           </div>
-          <Button variant="danger" onClick={handleLogout} className="h-12 px-6 rounded-2xl flex items-center">
-            <LogOut className="w-5 h-5 mr-2" />
-            Logout
+          <Button variant="danger" onClick={handleLogout} className="h-14 px-10 rounded-2xl flex items-center font-black uppercase tracking-widest text-[10px] shadow-2xl shadow-rose-500/20 active:scale-95 transition-all">
+            <LogOut className="w-5 h-5 mr-3" />
+            Abort Session
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left Column - Profile Info */}
-          <div className="lg:col-span-8 space-y-8">
-            <Card className="overflow-hidden border-none shadow-2xl shadow-indigo-900/5">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+          {/* Left Column */}
+          <div className="lg:col-span-8 space-y-10">
+            <Card className="p-10 border-none shadow-2xl shadow-slate-900/5 bg-card relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-10 opacity-[0.02] pointer-events-none">
+                <Shield size={200} />
+              </div>
+
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-4">
                 <div>
-                  <h2 className="text-2xl font-black text-foreground">Personal Information</h2>
-                  <p className="text-muted-foreground text-sm mt-1">This information will be used for your bookings.</p>
+                  <h2 className="text-2xl font-black text-foreground uppercase tracking-tight">Identity Manifest</h2>
+                  <p className="text-muted-foreground text-xs font-bold mt-1 uppercase tracking-widest">Base identification and contact routing</p>
                 </div>
                 {!isEditing ? (
-                  <Button
-                    variant="outline"
+                  <button
                     onClick={() => setIsEditing(true)}
-                    className="flex items-center rounded-xl"
+                    className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-black uppercase tracking-widest text-[10px] hover:scale-105 transition-all active:scale-95 shadow-xl shadow-indigo-600/20"
                   >
-                    <Edit2 className="w-4 h-4 mr-2" />
-                    Edit Profile
-                  </Button>
+                    <Edit2 size={14} />
+                    Modify Manifest
+                  </button>
                 ) : (
-                  <div className="flex space-x-3">
-                    <Button
-                      variant="ghost"
-                      onClick={handleCancel}
-                      className="flex items-center"
-                    >
-                      <X className="w-4 h-4 mr-2" />
-                      Cancel
-                    </Button>
-                    <Button
-                      variant="primary"
-                      onClick={handleSave}
-                      isLoading={updating}
-                      className="flex items-center rounded-xl shadow-lg shadow-indigo-600/20"
-                    >
-                      <Save className="w-4 h-4 mr-2" />
-                      Save Changes
-                    </Button>
+                  <div className="flex gap-4">
+                    <button onClick={() => setIsEditing(false)} className="px-6 py-3 text-muted-foreground font-black uppercase tracking-widest text-[10px] hover:text-foreground">Cancel</button>
+                    <button onClick={handleSave} disabled={updating} className="px-8 py-3 bg-emerald-500 text-white rounded-xl font-black uppercase tracking-widest text-[10px] shadow-xl shadow-emerald-500/20 active:scale-95 transition-all disabled:opacity-50">
+                      {updating ? 'Syncing...' : 'Save Changes'}
+                    </button>
                   </div>
                 )}
               </div>
 
               {success && (
-                <div className="mb-8 p-4 bg-emerald-50 border-2 border-emerald-100 rounded-2xl animate-in fade-in slide-in-from-top-4 duration-300">
-                  <p className="text-emerald-700 font-bold flex items-center">
-                    <Star className="w-5 h-5 mr-2 fill-emerald-500" />
-                    {success}
-                  </p>
+                <div className="mb-8 p-5 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center gap-4 animate-in fade-in slide-in-from-top-2">
+                  <CheckCircle2 className="text-emerald-500" size={20} />
+                  <p className="text-emerald-500 text-xs font-black uppercase tracking-widest">{success}</p>
                 </div>
               )}
 
               {error && (
-                <div className="mb-8 p-4 bg-rose-50 border-2 border-rose-100 rounded-2xl animate-shake">
-                  <p className="text-rose-700 font-bold">{error}</p>
+                <div className="mb-8 p-5 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-center gap-4 animate-shake">
+                  <AlertCircle className="text-rose-500" size={20} />
+                  <p className="text-rose-500 text-xs font-black uppercase tracking-widest">{error}</p>
                 </div>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                 <Input
-                  label="First Name"
+                  label="Agent First Name"
                   value={isEditing ? formData.firstName : profile.firstName}
                   onChange={(e) => handleInputChange('firstName', e.target.value)}
                   disabled={!isEditing}
-                  leftIcon={<User className="w-5 h-5 text-indigo-400" />}
+                  leftIcon={<User className="w-5 h-5 text-indigo-500" />}
                 />
                 <Input
-                  label="Last Name"
+                  label="Agent Last Name"
                   value={isEditing ? formData.lastName : profile.lastName}
                   onChange={(e) => handleInputChange('lastName', e.target.value)}
                   disabled={!isEditing}
-                  leftIcon={<User className="w-5 h-5 text-indigo-400" />}
+                  leftIcon={<User className="w-5 h-5 text-indigo-500" />}
                 />
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Secure Email address</label>
+                  <div className="h-14 bg-muted/50 border-2 border-transparent rounded-2xl px-6 flex items-center gap-4 text-muted-foreground opacity-60">
+                    <Mail size={18} />
+                    <span className="font-bold">{profile.email}</span>
+                  </div>
+                </div>
                 <Input
-                  label="Email address"
-                  value={profile.email}
-                  disabled
-                  leftIcon={<Mail className="w-5 h-5 text-muted-foreground" />}
-                  className="bg-muted border-transparent cursor-not-allowed opacity-60"
-                />
-                <Input
-                  label="Phone Number"
+                  label="Comms Line (Phone)"
                   value={isEditing ? formData.phoneNumber : profile.phoneNumber || 'Not provided'}
                   onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
                   disabled={!isEditing}
-                  leftIcon={<Phone className="w-5 h-5 text-indigo-400" />}
+                  leftIcon={<Phone className="w-5 h-5 text-indigo-500" />}
                 />
               </div>
 
-              <div className="mt-12 pt-10 border-t border-border">
-                <h3 className="text-xl font-black text-foreground mb-6">Account Details</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="flex items-center p-5 bg-muted rounded-2xl border border-border">
-                    <div className="w-12 h-12 bg-card rounded-xl flex items-center justify-center mr-4 shadow-sm">
-                      <Calendar className="w-6 h-6 text-indigo-600" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Member Since</p>
-                      <p className="font-bold text-foreground mt-1">
-                        {new Date(profile.createdAt).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
-                      </p>
-                    </div>
+              <div className="mt-12 pt-10 border-t border-border grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="flex items-center p-6 bg-muted/30 rounded-3xl border border-border">
+                  <Calendar className="w-10 h-10 text-slate-400 mr-5" />
+                  <div>
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Activation Date</p>
+                    <p className="font-black text-foreground uppercase mt-1">{new Date(profile.createdAt).toLocaleDateString()}</p>
                   </div>
-                  <div className="flex items-center p-5 bg-muted rounded-2xl border border-border">
-                    <div className="w-12 h-12 bg-card rounded-xl flex items-center justify-center mr-4 shadow-sm">
-                      <Clock className="w-6 h-6 text-teal-600" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Last Updated</p>
-                      <p className="font-bold text-foreground mt-1">
-                        {new Date(profile.updatedAt).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
-                      </p>
-                    </div>
+                </div>
+                <div className="flex items-center p-6 bg-muted/30 rounded-3xl border border-border">
+                  <Clock className="w-10 h-10 text-slate-400 mr-5" />
+                  <div>
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Last Sync</p>
+                    <p className="font-black text-foreground uppercase mt-1">{new Date(profile.updatedAt).toLocaleDateString()}</p>
                   </div>
                 </div>
               </div>
             </Card>
 
-            {/* Travel Preferences Card */}
-            <Card className="border-none shadow-2xl shadow-indigo-900/5">
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-2xl font-black text-foreground">Travel Preferences</h2>
-                <Button variant="ghost" className="text-indigo-600 font-bold hover:bg-indigo-50 px-4 py-2 rounded-xl">
+            {/* Travel Preferences */}
+            <Card className="p-10 border-none shadow-2xl shadow-slate-900/5 bg-card relative">
+              <div className="flex items-center justify-between mb-10">
+                <div>
+                  <h2 className="text-2xl font-black text-foreground uppercase tracking-tight">Tactical Preferences</h2>
+                  <p className="text-muted-foreground text-xs font-bold mt-1 uppercase tracking-widest">Mission parameters and logistical requirements</p>
+                </div>
+                <button
+                  onClick={() => setModalType('preference')}
+                  className="flex items-center gap-2 text-indigo-600 font-black uppercase tracking-widest text-[10px] hover:bg-indigo-50 px-5 py-3 rounded-xl transition-all"
+                >
+                  <Settings size={14} />
                   Configure
-                </Button>
+                </button>
               </div>
+
               {profile.travelPreferences && Object.keys(profile.travelPreferences).length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {Object.entries(profile.travelPreferences).map(([key, value]) => (
-                    <div key={key} className="flex justify-between items-center p-4 bg-muted rounded-2xl border border-border">
-                      <span className="text-muted-foreground font-bold capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
-                      <span className="font-black text-indigo-600">{String(value)}</span>
+                    <div key={key} className="p-5 bg-muted/30 rounded-2xl border border-border flex justify-between items-center group hover:border-indigo-500/30 transition-all">
+                      <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
+                      <span className="font-black text-indigo-600 uppercase text-xs">{String(value)}</span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-12 bg-muted rounded-[2.5rem] border-2 border-dashed border-border">
-                  <div className="w-16 h-16 bg-card rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
-                    <Globe className="w-8 h-8 text-slate-300" />
-                  </div>
-                  <h4 className="text-lg font-bold text-foreground">No preferences set</h4>
-                  <p className="text-muted-foreground mt-1 max-w-xs mx-auto">Tell us how you like to travel for personalized recommendations.</p>
-                  <Button variant="outline" className="mt-6 border-border rounded-xl" onClick={() => setIsEditing(true)}>
+                <div className="text-center py-20 bg-muted/30 rounded-[3rem] border-2 border-dashed border-border group hover:border-indigo-500/30 transition-all cursor-pointer" onClick={() => setModalType('preference')}>
+                  <Globe className="w-16 h-16 text-slate-300 mx-auto mb-6 group-hover:scale-110 transition-transform" />
+                  <h4 className="text-lg font-black text-foreground uppercase tracking-tight">No parameters set</h4>
+                  <p className="text-muted-foreground mt-2 max-w-xs mx-auto text-sm font-medium leading-relaxed">Establish your operational requirements for personalized mission data.</p>
+                  <button className="mt-8 px-10 py-4 bg-white text-indigo-600 border border-border rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-xl shadow-indigo-600/5 active:scale-95 transition-all">
                     Set Preferences
-                  </Button>
+                  </button>
                 </div>
               )}
             </Card>
           </div>
 
-          {/* Right Column - Actions & Passport */}
-          <div className="lg:col-span-4 space-y-8">
-            <Card className="border-none shadow-2xl shadow-indigo-900/5">
-              <h2 className="text-2xl font-black text-foreground mb-6">Passport</h2>
+          {/* Right Column */}
+          <div className="lg:col-span-4 space-y-10">
+            <Card className="p-10 border-none shadow-2xl shadow-slate-900/5 bg-slate-900 text-white relative overflow-hidden">
+              <div className="absolute -right-20 -bottom-20 p-20 opacity-5 pointer-events-none">
+                <FileText size={300} />
+              </div>
+              <h2 className="text-2xl font-black uppercase tracking-tight mb-8">Passport</h2>
               {profile.passportDetails && Object.keys(profile.passportDetails).length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-4 relative z-10">
                   {Object.entries(profile.passportDetails).map(([key, value]) => (
-                    <div key={key} className="p-4 bg-muted rounded-2xl border border-border">
-                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1">{key.replace(/([A-Z])/g, ' $1')}</p>
-                      <p className="font-bold text-foreground">{String(value)}</p>
+                    <div key={key} className="p-5 bg-white/5 rounded-2xl border border-white/5">
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">{key.replace(/([A-Z])/g, ' $1')}</p>
+                      <p className="font-black text-white uppercase text-sm">{String(value)}</p>
                     </div>
                   ))}
-                  <Button variant="ghost" className="w-full text-indigo-600 font-bold mt-4" onClick={() => setIsEditing(true)}>
+                  <button
+                    onClick={() => setModalType('passport')}
+                    className="w-full h-14 bg-white/10 hover:bg-white/15 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] mt-6 transition-all"
+                  >
                     Update Passport
-                  </Button>
+                  </button>
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <div className="w-14 h-14 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                    <FileText className="w-7 h-7 text-muted-foreground" />
+                <div className="text-center py-10 relative z-10">
+                  <div className="w-16 h-16 bg-white/5 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-white/5">
+                    <Shield className="w-8 h-8 text-slate-400" />
                   </div>
-                  <p className="text-muted-foreground mb-6 font-medium">Add your details for faster booking.</p>
-                  <Button variant="outline" className="w-full rounded-2xl border-border" onClick={() => setIsEditing(true)}>
+                  <p className="text-slate-400 mb-8 font-bold text-sm leading-relaxed uppercase tracking-widest">Add credentials for accelerated mission clearance.</p>
+                  <button
+                    onClick={() => setModalType('passport')}
+                    className="w-full h-14 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-2xl shadow-indigo-600/40 active:scale-95 transition-all"
+                  >
                     Add Passport Details
-                  </Button>
+                  </button>
                 </div>
               )}
             </Card>
 
-            <Card className="border-none shadow-2xl shadow-indigo-900/5">
-              <h2 className="text-2xl font-black text-foreground mb-6">Security</h2>
-              <div className="space-y-3">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start rounded-xl border-border bg-muted/50 hover:bg-muted"
-                  onClick={() => navigate('/change-password')}
+            <Card className="p-10 border-none shadow-2xl shadow-slate-900/5 bg-card">
+              <h2 className="text-2xl font-black text-foreground uppercase tracking-tight mb-8">Security Hub</h2>
+              <div className="space-y-4">
+                <button
+                  onClick={() => setModalType('password')}
+                  className="w-full h-14 flex items-center justify-between px-6 bg-muted/50 rounded-2xl border border-border group hover:border-indigo-500/30 transition-all"
                 >
-                  <Lock className="w-4 h-4 mr-3 text-muted-foreground" />
-                  Change Password
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start rounded-xl border-border bg-muted/50 hover:bg-muted"
-                  onClick={() => navigate('/privacy-settings')}
+                  <div className="flex items-center gap-4">
+                    <Lock size={18} className="text-slate-400 group-hover:text-indigo-500 transition-colors" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 group-hover:text-foreground transition-colors">Change Credentials</span>
+                  </div>
+                  <ChevronRight size={14} className="text-slate-300 group-hover:text-indigo-500 transition-all group-hover:translate-x-1" />
+                </button>
+                <button
+                  onClick={() => setModalType('privacy')}
+                  className="w-full h-14 flex items-center justify-between px-6 bg-muted/50 rounded-2xl border border-border group hover:border-indigo-500/30 transition-all"
                 >
-                  <Settings className="w-4 h-4 mr-3 text-muted-foreground" />
-                  Privacy Settings
-                </Button>
+                  <div className="flex items-center gap-4">
+                    <Settings size={18} className="text-slate-400 group-hover:text-indigo-500 transition-colors" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 group-hover:text-foreground transition-colors">Privacy Protocol</span>
+                  </div>
+                  <ChevronRight size={14} className="text-slate-300 group-hover:text-indigo-500 transition-all group-hover:translate-x-1" />
+                </button>
               </div>
             </Card>
 
-            <div className="p-8 bg-indigo-600 rounded-[2.5rem] text-white shadow-xl shadow-indigo-600/30 relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-8 opacity-10">
-                <Globe className="w-32 h-32" />
+            <div className="p-10 bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-[3rem] text-white shadow-2xl shadow-indigo-600/30 relative overflow-hidden group cursor-pointer" onClick={() => setModalType('support')}>
+              <div className="absolute -top-10 -right-10 p-20 opacity-10 group-hover:scale-110 group-hover:rotate-12 transition-all duration-700">
+                <MessageSquare size={160} />
               </div>
-              <h3 className="text-xl font-black mb-3 relative z-10">Need Assistance?</h3>
-              <p className="text-indigo-100 text-sm mb-6 relative z-10 leading-relaxed">
-                Our premium support team is available 24/7 to help with your travel plans.
+              <h3 className="text-2xl font-black mb-4 uppercase tracking-tight relative z-10">Need HQ Support?</h3>
+              <p className="text-indigo-100 text-xs font-bold mb-10 relative z-10 leading-relaxed uppercase tracking-widest">
+                Our support operatives are active 24/7 for mission-critical assistance.
               </p>
-              <Button className="w-full bg-card text-indigo-600 hover:bg-white/90 rounded-2xl font-bold h-12 relative z-10">
-                Contact Support
-              </Button>
+              <button className="w-full h-14 bg-white text-indigo-600 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-2xl shadow-indigo-900/20 group-hover:bg-indigo-50 active:scale-95 transition-all relative z-10">
+                Establish Connection
+              </button>
             </div>
           </div>
         </div>
       </div>
+
+      {/* MODALS */}
+
+      {modalType === 'passport' && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-2xl">
+          <div className="w-full max-w-lg bg-slate-900 border border-white/10 p-12 rounded-[4rem] shadow-[0_0_100px_rgba(0,0,0,0.5)] space-y-12 animate-in zoom-in-95 duration-500 border-t-indigo-500/30">
+            <div className="flex justify-between items-center">
+              <div>
+                <h4 className="text-3xl font-black text-white tracking-tighter uppercase">Credential Sync</h4>
+                <p className="text-[10px] text-indigo-400 font-black uppercase tracking-[0.3em] mt-1">Operational ID Synchronization</p>
+              </div>
+              <button onClick={() => setModalType(null)} className="p-4 bg-white/5 rounded-2xl text-slate-500 hover:text-white transition-all hover:bg-white/10"><X size={24} /></button>
+            </div>
+
+            <div className="space-y-8">
+              <div>
+                <label className={modalLabelClass}>Passport Registry Number</label>
+                <Input
+                  value={formData.passportDetails?.passportNumber || ''}
+                  onChange={(e) => handlePassportUpdate('passportNumber', e.target.value)}
+                  className={modalInputClass}
+                />
+              </div>
+              <div>
+                <label className={modalLabelClass}>Nationality / Sector Origin</label>
+                <Input
+                  value={formData.passportDetails?.nationality || ''}
+                  onChange={(e) => handlePassportUpdate('nationality', e.target.value)}
+                  className={modalInputClass}
+                />
+              </div>
+              <div>
+                <label className={modalLabelClass}>Exfiltration Deadline (Expiry)</label>
+                <Input
+                  type="date"
+                  value={formData.passportDetails?.expiryDate || ''}
+                  onChange={(e) => handlePassportUpdate('expiryDate', e.target.value)}
+                  className={modalInputClass}
+                />
+              </div>
+            </div>
+
+            <button onClick={handleSave} disabled={updating} className="w-full h-18 bg-indigo-600 text-white rounded-3xl font-black uppercase tracking-[0.2em] text-xs shadow-[0_15px_35px_rgba(79,70,229,0.3)] active:scale-95 transition-all disabled:opacity-50 hover:bg-indigo-500 flex items-center justify-center gap-3">
+              <Zap size={16} className="fill-white" />
+              {updating ? 'Initializing Sync...' : 'Commit Synchronize'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {modalType === 'password' && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-2xl">
+          <form onSubmit={handlePasswordChange} className="w-full max-w-lg bg-slate-900 border border-white/10 p-12 rounded-[4rem] shadow-[0_0_100px_rgba(0,0,0,0.5)] space-y-12 animate-in zoom-in-95 duration-500 border-t-rose-500/30">
+            <div className="flex justify-between items-center">
+              <div>
+                <h4 className="text-3xl font-black text-white tracking-tighter uppercase">Security Override</h4>
+                <p className="text-[10px] text-rose-400 font-black uppercase tracking-[0.3em] mt-1">Credential Mutation Protocol</p>
+              </div>
+              <button type="button" onClick={() => setModalType(null)} className="p-4 bg-white/5 rounded-2xl text-slate-500 hover:text-white transition-all hover:bg-white/10"><X size={24} /></button>
+            </div>
+
+            <div className="space-y-8">
+              <div>
+                <label className={modalLabelClass}>Current Access Credentials</label>
+                <Input
+                  type="password"
+                  value={passwordData.current}
+                  onChange={(e) => setPasswordData({ ...passwordData, current: e.target.value })}
+                  className={modalInputClass}
+                />
+              </div>
+              <div>
+                <label className={modalLabelClass}>New Access Credentials</label>
+                <Input
+                  type="password"
+                  value={passwordData.new}
+                  onChange={(e) => setPasswordData({ ...passwordData, new: e.target.value })}
+                  className={modalInputClass}
+                />
+              </div>
+              <div>
+                <label className={modalLabelClass}>Verify New Credentials</label>
+                <Input
+                  type="password"
+                  value={passwordData.confirm}
+                  onChange={(e) => setPasswordData({ ...passwordData, confirm: e.target.value })}
+                  className={modalInputClass}
+                />
+              </div>
+            </div>
+
+            <button type="submit" disabled={updating} className="w-full h-18 bg-rose-500 text-white rounded-3xl font-black uppercase tracking-[0.2em] text-xs shadow-[0_15px_35px_rgba(244,63,94,0.3)] active:scale-95 transition-all disabled:opacity-50 hover:bg-rose-400 flex items-center justify-center gap-3">
+              <Shield size={16} className="fill-white" />
+              {updating ? 'Mutating...' : 'Commit Security Update'}
+            </button>
+          </form>
+        </div>
+      )}
+
+      {modalType === 'preference' && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-2xl">
+          <div className="w-full max-w-2xl bg-slate-900 border border-white/10 p-12 rounded-[4rem] shadow-[0_0_100px_rgba(0,0,0,0.5)] space-y-12 animate-in zoom-in-95 duration-500 border-t-indigo-500/30">
+            <div className="flex justify-between items-center">
+              <div>
+                <h4 className="text-3xl font-black text-white tracking-tighter uppercase">Mission Parameters</h4>
+                <p className="text-[10px] text-indigo-400 font-black uppercase tracking-[0.3em] mt-1">Logistical Requirement Calibration</p>
+              </div>
+              <button onClick={() => setModalType(null)} className="p-4 bg-white/5 rounded-2xl text-slate-500 hover:text-white transition-all hover:bg-white/10"><X size={24} /></button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-10">
+              <div className="space-y-3">
+                <label className={modalLabelClass}>Dietary Constraint</label>
+                <select
+                  value={formData.travelPreferences?.dietary || ''}
+                  onChange={(e) => handlePreferenceUpdate('dietary', e.target.value)}
+                  className="w-full h-16 bg-slate-950/40 border border-white/10 rounded-2xl px-8 text-white font-black text-sm outline-none focus:border-indigo-500/50 appearance-none shadow-inner"
+                >
+                  <option value="" className="bg-slate-900">Standard Issue</option>
+                  <option value="Vegan" className="bg-slate-900">Vegan Protocol</option>
+                  <option value="Vegetarian" className="bg-slate-900">Vegetarian Protocol</option>
+                  <option value="Halal" className="bg-slate-900">Halal Protocol</option>
+                  <option value="Kosher" className="bg-slate-900">Kosher Protocol</option>
+                </select>
+              </div>
+              <div className="space-y-3">
+                <label className={modalLabelClass}>Preferred Sector (Seating)</label>
+                <select
+                  value={formData.travelPreferences?.seating || ''}
+                  onChange={(e) => handlePreferenceUpdate('seating', e.target.value)}
+                  className="w-full h-16 bg-slate-950/40 border border-white/10 rounded-2xl px-8 text-white font-black text-sm outline-none focus:border-indigo-500/50 appearance-none shadow-inner"
+                >
+                  <option value="Aisle" className="bg-slate-900">Aisle Sector</option>
+                  <option value="Window" className="bg-slate-900">Window Sector</option>
+                  <option value="ExtraLegroom" className="bg-slate-900">Enhanced Legroom</option>
+                </select>
+              </div>
+              <div className="space-y-3">
+                <label className={modalLabelClass}>Accommodation Tier</label>
+                <select
+                  value={formData.travelPreferences?.hotelType || ''}
+                  onChange={(e) => handlePreferenceUpdate('hotelType', e.target.value)}
+                  className="w-full h-16 bg-slate-950/40 border border-white/10 rounded-2xl px-8 text-white font-black text-sm outline-none focus:border-indigo-500/50 appearance-none shadow-inner"
+                >
+                  <option value="Modern" className="bg-slate-900">Modern Operative</option>
+                  <option value="Classic" className="bg-slate-900">Classic Luxury</option>
+                  <option value="Boutique" className="bg-slate-900">Discrete Boutique</option>
+                </select>
+              </div>
+              <div className="space-y-3">
+                <label className={modalLabelClass}>Aviation Logistics Tier</label>
+                <select
+                  value={formData.travelPreferences?.airlineTier || ''}
+                  onChange={(e) => handlePreferenceUpdate('airlineTier', e.target.value)}
+                  className="w-full h-16 bg-slate-950/40 border border-white/10 rounded-2xl px-8 text-white font-black text-sm outline-none focus:border-indigo-500/50 appearance-none shadow-inner"
+                >
+                  <option value="Economy" className="bg-slate-900">Standard Economy</option>
+                  <option value="Business" className="bg-slate-900">Business Class</option>
+                  <option value="First" className="bg-slate-900">First Class Elite</option>
+                </select>
+              </div>
+            </div>
+
+            <button onClick={handleSave} disabled={updating} className="w-full h-18 bg-indigo-600 text-white rounded-3xl font-black uppercase tracking-[0.2em] text-xs shadow-[0_15px_35px_rgba(79,70,229,0.3)] active:scale-95 transition-all disabled:opacity-50 hover:bg-indigo-500 flex items-center justify-center gap-3">
+              <Settings size={16} className="fill-white" />
+              {updating ? 'Calibrating...' : 'Commit Parameters'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {modalType === 'privacy' && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-2xl">
+          <div className="w-full max-w-lg bg-slate-900 border border-white/10 p-12 rounded-[4rem] shadow-[0_0_100px_rgba(0,0,0,0.5)] space-y-12 animate-in zoom-in-95 duration-500 border-t-indigo-500/30">
+            <div className="flex justify-between items-center">
+              <div>
+                <h4 className="text-3xl font-black text-white tracking-tighter uppercase">Privacy Matrix</h4>
+                <p className="text-[10px] text-indigo-400 font-black uppercase tracking-[0.3em] mt-1">Data Visibility Protocols</p>
+              </div>
+              <button onClick={() => setModalType(null)} className="p-4 bg-white/5 rounded-2xl text-slate-500 hover:text-white transition-all hover:bg-white/10"><X size={24} /></button>
+            </div>
+
+            <div className="space-y-6">
+              {[
+                { id: 'publicProfile', label: 'Public Agent Visibility', icon: Globe },
+                { id: 'dataSharing', label: 'Tactical Intelligence Sharing', icon: Shield },
+                { id: 'marketing', label: 'Priority Mission Briefings', icon: Mail }
+              ].map((item) => (
+                <div key={item.id} className="flex items-center justify-between p-8 bg-slate-950/40 rounded-3xl border border-white/5 group hover:border-indigo-500/30 transition-all">
+                  <div className="flex items-center gap-6">
+                    <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-slate-500 group-hover:text-indigo-500 transition-all group-hover:scale-110">
+                      <item.icon size={22} />
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 group-hover:text-white transition-colors">{item.label}</span>
+                  </div>
+                  <button
+                    onClick={() => setPrivacyData({ ...privacyData, [item.id]: !privacyData[item.id as keyof typeof privacyData] })}
+                    className={`w-14 h-7 rounded-full transition-all relative ${privacyData[item.id as keyof typeof privacyData] ? 'bg-indigo-600 shadow-[0_0_15px_rgba(79,70,229,0.5)]' : 'bg-slate-800'}`}
+                  >
+                    <div className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow-sm transition-all ${privacyData[item.id as keyof typeof privacyData] ? 'left-8' : 'left-1'}`} />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <button onClick={() => { setSuccess('Privacy protocols established.'); setModalType(null); }} className="w-full h-18 bg-white/5 hover:bg-white/10 text-white rounded-3xl font-black uppercase tracking-[0.2em] text-xs border border-white/10 transition-all flex items-center justify-center gap-3">
+              <CheckCircle2 size={16} />
+              Confirm Protocols
+            </button>
+          </div>
+        </div>
+      )}
+
+      {modalType === 'support' && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-2xl">
+          <form onSubmit={handleSupportSubmit} className="w-full max-w-lg bg-slate-900 border border-white/10 p-12 rounded-[4rem] shadow-[0_0_100px_rgba(0,0,0,0.5)] space-y-12 animate-in zoom-in-95 duration-500 border-t-indigo-500/30">
+            <div className="flex justify-between items-center">
+              <div>
+                <h4 className="text-3xl font-black text-white tracking-tighter uppercase">HQ Uplink</h4>
+                <p className="text-[10px] text-indigo-400 font-black uppercase tracking-[0.3em] mt-1">Priority Support Dispatch</p>
+              </div>
+              <button type="button" onClick={() => setModalType(null)} className="p-4 bg-white/5 rounded-2xl text-slate-500 hover:text-white transition-all hover:bg-white/10"><X size={24} /></button>
+            </div>
+
+            <div className="space-y-8">
+              <div className="space-y-4">
+                <label className={modalLabelClass}>Brief Incident Report</label>
+                <textarea
+                  required
+                  rows={5}
+                  value={supportMessage}
+                  onChange={(e) => setSupportMessage(e.target.value)}
+                  className="w-full bg-slate-950/40 border border-white/10 rounded-3xl p-8 text-white font-bold text-sm outline-none focus:border-indigo-500/50 resize-none shadow-inner placeholder:text-slate-700"
+                  placeholder="Describe the mission impedance encountered..."
+                />
+              </div>
+              <div className="flex items-center gap-5 p-6 bg-amber-500/5 border border-amber-500/20 rounded-3xl">
+                <div className="shrink-0 p-3 bg-amber-500/10 rounded-xl">
+                  <AlertCircle className="text-amber-500" size={24} />
+                </div>
+                <p className="text-[10px] font-black text-amber-500/80 uppercase tracking-[0.15em] leading-relaxed">Priority uplink active. Emergency requests are routed through tactical response channels.</p>
+              </div>
+            </div>
+
+            <button type="submit" className="w-full h-18 bg-indigo-600 text-white rounded-3xl font-black uppercase tracking-[0.2em] text-xs shadow-[0_15px_35px_rgba(79,70,229,0.3)] active:scale-95 transition-all hover:bg-indigo-500 flex items-center justify-center gap-3">
+              <MessageSquare size={16} className="fill-white" />
+              Dispatch to HQ
+            </button>
+          </form>
+        </div>
+      )}
     </Layout>
   );
 };

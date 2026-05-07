@@ -97,9 +97,7 @@ const travelDocService = {
     return response.data;
   },
   updatePackingItem: async (itemId: string, isPacked: boolean): Promise<void> => {
-    await api.put(`/TravelDocs/packing-items/${itemId}`, isPacked, {
-        headers: { 'Content-Type': 'application/json' }
-    });
+    await api.put(`/TravelDocs/packing-items/${itemId}`, { isPacked });
   },
   deletePackingList: async (listId: string): Promise<void> => {
     await api.delete(`/TravelDocs/packing-lists/${listId}`);
@@ -122,9 +120,7 @@ const travelDocService = {
     return response.data;
   },
   updateChecklistItem: async (itemId: string, isCompleted: boolean): Promise<void> => {
-    await api.put(`/TravelDocs/checklist-items/${itemId}`, isCompleted, {
-        headers: { 'Content-Type': 'application/json' }
-    });
+    await api.put(`/TravelDocs/checklist-items/${itemId}`, { isCompleted });
   },
   deleteChecklist: async (checklistId: string): Promise<void> => {
     await api.delete(`/TravelDocs/checklists/${checklistId}`);

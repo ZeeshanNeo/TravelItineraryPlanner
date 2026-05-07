@@ -21,7 +21,7 @@ services:
 
   backend:
     build:
-      context: ./backend
+      context: ../backend
       dockerfile: ../deployment/backend.Dockerfile
     container_name: voyager-backend
     ports:
@@ -41,7 +41,7 @@ services:
 
   frontend:
     build:
-      context: .
+      context: ..
       dockerfile: deployment/frontend.Dockerfile
     container_name: voyager-frontend
     ports:

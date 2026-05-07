@@ -69,7 +69,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ tripId }) => {
                   </span>
                 </div>
                 <div className="bg-white/5 border border-white/5 px-4 py-3 rounded-2xl rounded-tl-none">
-                  <p className="text-gray-300 text-sm leading-relaxed">{comment.text}</p>
+                  <p className="text-gray-300 text-sm leading-relaxed">{comment.text || (comment as any).content || (comment as any).message}</p>
                 </div>
               </div>
             </div>

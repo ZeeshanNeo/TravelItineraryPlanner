@@ -77,7 +77,8 @@ public class AuthService : IAuthService
             RefreshToken = refreshToken,
             UserId = user.Id,
             Email = user.Email,
-            FullName = $"{user.FirstName} {user.LastName}"
+            FullName = $"{user.FirstName} {user.LastName}",
+            Role = user.Role.ToString()
         };
     }
 
@@ -109,7 +110,8 @@ public class AuthService : IAuthService
             RefreshToken = refreshToken,
             UserId = user.Id,
             Email = user.Email,
-            FullName = $"{user.FirstName} {user.LastName}"
+            FullName = $"{user.FirstName} {user.LastName}",
+            Role = user.Role.ToString()
         };
     }
 
@@ -148,7 +150,8 @@ public class AuthService : IAuthService
             RefreshToken = newRefreshToken,
             UserId = user.Id,
             Email = user.Email,
-            FullName = $"{user.FirstName} {user.LastName}"
+            FullName = $"{user.FirstName} {user.LastName}",
+            Role = user.Role.ToString()
         };
     }
 

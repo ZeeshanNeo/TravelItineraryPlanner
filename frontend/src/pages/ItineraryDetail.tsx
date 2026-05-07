@@ -3,8 +3,8 @@ import { useParams, Link } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import {
   Calendar, MapPin, Clock, ArrowLeft,
-  Star, Share2, List, CreditCard, FileText, Camera as CameraIcon, Users,
-  Settings, Download, Sparkles, DollarSign, X
+  Share2, List, CreditCard, FileText, Camera as CameraIcon, Users,
+  Download, Sparkles, DollarSign, X, ShieldCheck, CheckCircle
 } from 'lucide-react';
 import Button from '../components/shared/Button';
 import { tripService } from '../services/trip.service';
@@ -13,6 +13,8 @@ import type { TripResponse } from '../services/trip.service';
 import type { ActivityResponse, ItineraryResponse, ItineraryDayResponse } from '../services/itinerary.service';
 import Timeline from '../components/itinerary/Timeline';
 import { useToast } from '../components/shared/Toast';
+import { runTripAssurance, type AssuranceCheck } from '../utils/tripAssurance';
+import ExportManifestModal from '../components/itinerary/ExportManifestModal';
 
 // Lazy loaded modules for performance
 const BudgetModule = lazy(() => import('../components/budget/BudgetModule'));
@@ -28,6 +30,8 @@ const ItineraryDetail: React.FC = () => {
   const [trip, setTrip] = useState<TripResponse | null>(null);
   const [itineraries, setItineraries] = useState<ItineraryResponse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [assuranceChecks, setAssuranceChecks] = useState<AssuranceCheck[]>([]);
   const [activityModalOpen, setActivityModalOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState<ActivityResponse | null>(null);
   const [activitySaving, setActivitySaving] = useState(false);
@@ -75,6 +79,11 @@ const ItineraryDetail: React.FC = () => {
       }
 
       setItineraries(itins);
+
+      if (tripData && itins.length > 0) {
+        const checks = runTripAssurance(tripData, itins);
+        setAssuranceChecks(checks);
+      }
     } catch (err) {
       console.error('Failed to load itinerary data:', err);
     } finally {
@@ -292,12 +301,18 @@ const ItineraryDetail: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-4">
-                <button className="h-16 px-8 bg-white/10 hover:bg-white/20 backdrop-blur-xl border border-white/20 text-white rounded-2xl flex items-center gap-3 transition-all active:scale-95 group">
+                <button 
+                  onClick={() => setActiveTab('collaboration')}
+                  className="h-16 px-8 bg-white/10 hover:bg-white/20 backdrop-blur-xl border border-white/20 text-white rounded-2xl flex items-center gap-3 transition-all active:scale-95 group"
+                >
                   <Share2 size={20} className="group-hover:rotate-12 transition-transform" />
                   <span className="text-[10px] font-black uppercase tracking-widest">Collaborate</span>
                 </button>
-                <button className="h-16 w-16 bg-primary hover:bg-primary/90 text-white rounded-2xl flex items-center justify-center shadow-2xl shadow-primary/40 transition-all active:scale-95">
-                  <Settings size={24} />
+                <button 
+                  onClick={() => setExportModalOpen(true)}
+                  className="h-16 w-16 bg-primary hover:bg-primary/90 text-white rounded-2xl flex items-center justify-center shadow-2xl shadow-primary/40 transition-all active:scale-95"
+                >
+                  <Download size={24} />
                 </button>
               </div>
             </div>
@@ -394,48 +409,53 @@ const ItineraryDetail: React.FC = () => {
                     <div className="absolute top-0 right-0 p-8 opacity-5">
                       <Sparkles size={120} className="text-primary" />
                     </div>
-                    <h3 className="text-2xl font-black text-foreground mb-10 tracking-tight">Intelligence</h3>
+                    <div className="flex justify-between items-start mb-10">
+                      <h3 className="text-2xl font-black text-foreground tracking-tight">Intelligence</h3>
+                      <div className="flex items-center gap-1 bg-emerald-500/10 text-emerald-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-emerald-500/20">
+                        <ShieldCheck size={12} />
+                        Assurance Active
+                      </div>
+                    </div>
                     <div className="space-y-8">
-                      {[
-                        { label: 'Target Destination', value: trip.destination, icon: MapPin, color: 'text-blue-500' },
-                        { label: 'Departure Index', value: new Date(trip.startDate).toLocaleDateString(), icon: Clock, color: 'text-indigo-500' },
-                        { label: 'Travel Classification', value: trip.travelType, icon: Star, color: 'text-amber-500' },
-                      ].map((stat, i) => (
-                        <div key={i} className="flex items-center gap-5 group cursor-default">
-                          <div className={`w-14 h-14 rounded-3xl bg-muted flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform`}>
-                            <stat.icon className={`w-6 h-6 ${stat.color}`} />
+                      {assuranceChecks.slice(0, 3).map((check, i) => (
+                        <div key={i} className="flex items-start gap-5 group cursor-default">
+                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${check.status === 'pass' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'
+                            }`}>
+                            <CheckCircle size={18} />
                           </div>
                           <div className="min-w-0">
-                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">{stat.label}</p>
-                            <p className="text-xl font-bold text-foreground truncate">{stat.value}</p>
+                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">{check.title}</p>
+                            <p className="text-sm font-bold text-foreground leading-tight">{check.description}</p>
                           </div>
                         </div>
                       ))}
                     </div>
 
-                    <div className="mt-12 p-6 bg-muted rounded-3xl border border-border">
-                      <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-4">Journey Completion</p>
-                      <div className="h-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden mb-2">
-                        <div
-                          className="h-full bg-primary rounded-full transition-all duration-1000"
-                          style={{ width: `${scheduleDays.length > 0 ? (activeDay / scheduleDays.length) * 100 : 0}%` }}
-                        ></div>
-                      </div>
-                      <div className="flex justify-between items-center text-[10px] font-black text-muted-foreground uppercase">
-                        <span>{scheduleDays.length > 0 ? Math.round((activeDay / scheduleDays.length) * 100) : 0}% Complete</span>
-                        <span>Day {activeDay}/{scheduleDays.length || 0}</span>
-                      </div>
-                    </div>
+                    <button
+                      onClick={() => {
+                        setActiveTab('documentation');
+                        showToast('Full Trip Assurance Review Protocol Initiated', 'success');
+                      }}
+                      className="w-full mt-10 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:scale-[1.02] active:scale-95 transition-all"
+                    >
+                      Review Trip Assurance
+                    </button>
                   </div>
 
                   {/* Quick Actions */}
                   <div className="grid grid-cols-2 gap-4">
-                    <button className="p-6 bg-slate-900 rounded-[2rem] text-white flex flex-col gap-3 hover:bg-black transition-all">
-                      <Share2 size={24} className="text-primary" />
+                    <button
+                      onClick={() => setActiveTab('collaboration')}
+                      className="p-6 bg-emerald-500 rounded-[2rem] text-white flex flex-col gap-3 hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20"
+                    >
+                      <Users size={24} className="text-white" />
                       <span className="text-[10px] font-black uppercase tracking-widest">Share Project</span>
                     </button>
-                    <button className="p-6 bg-card border border-border rounded-[2rem] text-foreground flex flex-col gap-3 hover:bg-muted transition-all shadow-sm">
-                      <Download size={24} className="text-muted-foreground" />
+                    <button
+                      onClick={() => setExportModalOpen(true)}
+                      className="p-6 bg-card border border-border rounded-[2rem] text-foreground flex flex-col gap-3 hover:bg-muted transition-all shadow-sm"
+                    >
+                      <FileText size={24} className="text-muted-foreground" />
                       <span className="text-[10px] font-black uppercase tracking-widest">Export PDF</span>
                     </button>
                   </div>
@@ -454,6 +474,14 @@ const ItineraryDetail: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {exportModalOpen && trip && (
+        <ExportManifestModal
+          isOpen={exportModalOpen}
+          onClose={() => setExportModalOpen(false)}
+          trip={trip}
+        />
+      )}
 
       {activityModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/90 backdrop-blur-2xl p-4 sm:p-6" role="dialog" aria-modal="true">

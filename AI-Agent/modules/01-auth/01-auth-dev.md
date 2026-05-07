@@ -1,10 +1,11 @@
 Implement the Auth module based on plans/auth.md.
 
 Load:
-- persona.md
-- project-rules.md
-- save-tokens.md
-- project-architecture.md
+- global/Personas/fullstack-dev-persona.md
+- global/project-boundaries.md
+- global/save-tokens.md
+- global/kpi-contract.md
+- global/project-architecture.md
 - plans/auth.md
 
 Requirements:

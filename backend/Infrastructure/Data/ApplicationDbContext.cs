@@ -68,6 +68,7 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.FailedLoginAttempts).HasDefaultValue(0);
             entity.Property(e => e.EmailVerified).HasDefaultValue(false);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.Role).HasDefaultValue(UserRole.User);
 
             entity.HasMany(e => e.RefreshTokens)
                 .WithOne(e => e.User)

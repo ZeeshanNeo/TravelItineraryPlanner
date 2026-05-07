@@ -208,35 +208,65 @@ const BookingCard: React.FC<BookingCardProps> = ({
               Modify
             </Button>
             
-            {/* Actions Menu */}
+            {/* Premium Action Console - Hardened Mission Control */}
             <div className="relative group/menu">
-              <button className="p-3 text-slate-300 hover:text-primary transition-colors">
+              <button className="h-14 w-14 rounded-2xl border-2 border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-400 hover:text-primary hover:border-primary/50 transition-all active:scale-95 shadow-sm bg-white dark:bg-slate-900/50 backdrop-blur-xl">
                 <MoreVertical className="w-6 h-6" />
               </button>
-              <div className="absolute right-0 bottom-full mb-4 w-56 bg-card rounded-3xl shadow-2xl border border-border py-4 opacity-0 scale-95 pointer-events-none group-hover/menu:opacity-100 group-hover/menu:scale-100 group-hover/menu:pointer-events-auto transition-all z-20">
-                <button 
-                  onClick={() => onUploadDocument(booking.id)}
-                  className="w-full px-6 py-3 text-left flex items-center gap-4 hover:bg-muted transition-colors"
-                >
-                  <Plus className="w-5 h-5 text-muted-foreground" />
-                  <span className="text-sm font-black text-muted-foreground uppercase tracking-widest">Add Document</span>
-                </button>
-                <button 
-                  onClick={() => onArchive(booking.id, !booking.isArchived)}
-                  className="w-full px-6 py-3 text-left flex items-center gap-4 hover:bg-muted transition-colors"
-                >
-                  <Archive className="w-5 h-5 text-muted-foreground" />
-                  <span className="text-sm font-black text-muted-foreground uppercase tracking-widest">
-                    {booking.isArchived ? 'Restore' : 'Archive'}
-                  </span>
-                </button>
-                <button 
-                  onClick={() => onDelete(booking.id)}
-                  className="w-full px-6 py-3 text-left flex items-center gap-4 hover:bg-muted transition-colors text-rose-500"
-                >
-                  <Trash2 className="w-5 h-5" />
-                  <span className="text-sm font-black uppercase tracking-widest">Delete</span>
-                </button>
+              
+              <div className="absolute right-0 top-full mt-0.5 w-72 bg-white/95 dark:bg-slate-900/95 backdrop-blur-[40px] rounded-[2.5rem] shadow-[0_30px_70px_rgba(0,0,0,0.5)] border border-slate-200 dark:border-white/10 py-4 opacity-0 scale-95 translate-y-2 pointer-events-none group-hover/menu:opacity-100 group-hover/menu:scale-100 group-hover/menu:translate-y-0 group-hover/menu:pointer-events-auto transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] z-50 overflow-hidden ring-1 ring-black/10">
+                <div className="px-8 py-3 border-b border-slate-100 dark:border-white/5 mb-3 bg-slate-50/50 dark:bg-white/5 flex items-center justify-between">
+                  <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.3em]">Mission Control</span>
+                  <div className="flex gap-1">
+                    <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+                    <div className="w-1 h-1 rounded-full bg-emerald-500/40" />
+                  </div>
+                </div>
+                
+                <div className="px-3 space-y-1">
+                  <button 
+                    onClick={() => onUploadDocument(booking.id)}
+                    className="w-full px-5 py-4 text-left flex items-center gap-5 hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-[1.5rem] transition-all group/item"
+                  >
+                    <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center group-hover/item:scale-110 group-hover/item:rotate-6 transition-all duration-300 shadow-sm border border-indigo-500/5">
+                      <Plus className="w-5 h-5 text-indigo-500" />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[11px] font-black uppercase tracking-widest">Add Document</span>
+                      <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 mt-0.5">Upload manifest or tickets</span>
+                    </div>
+                  </button>
+
+                  <button 
+                    onClick={() => onArchive(booking.id, !booking.isArchived)}
+                    className="w-full px-5 py-4 text-left flex items-center gap-5 hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-[1.5rem] transition-all group/item"
+                  >
+                    <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center group-hover/item:scale-110 group-hover/item:rotate-6 transition-all duration-300 shadow-sm border border-emerald-500/5">
+                      <Archive className="w-5 h-5 text-emerald-500" />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[11px] font-black uppercase tracking-widest">
+                        {booking.isArchived ? 'Restore Record' : 'Archive Entry'}
+                      </span>
+                      <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 mt-0.5">Move to historical manifest</span>
+                    </div>
+                  </button>
+
+                  <div className="h-px bg-slate-100 dark:bg-white/5 my-3 mx-5" />
+
+                  <button 
+                    onClick={() => onDelete(booking.id)}
+                    className="w-full px-5 py-4 text-left flex items-center gap-5 hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400 rounded-[1.5rem] transition-all group/item"
+                  >
+                    <div className="w-10 h-10 rounded-2xl bg-rose-500/10 flex items-center justify-center group-hover/item:scale-110 group-hover/item:rotate-6 transition-all duration-300 shadow-sm border border-rose-500/5">
+                      <Trash2 className="w-5 h-5 text-rose-500" />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[11px] font-black uppercase tracking-widest">Delete Record</span>
+                      <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 mt-0.5">Permanent data removal</span>
+                    </div>
+                  </button>
+                </div>
               </div>
             </div>
           </div>

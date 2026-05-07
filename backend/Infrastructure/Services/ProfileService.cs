@@ -80,7 +80,8 @@ public class ProfileService : IProfileService
             PassportDetails = user.PassportDetails,
             CreatedAt = user.CreatedAt,
             UpdatedAt = user.UpdatedAt,
-            IsActive = user.IsActive
+            IsActive = user.IsActive,
+            Role = user.Role.ToString()
         };
     }
 }

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Tag, MapPin, Trash2, Camera, X, Image as ImageIcon } from 'lucide-react';
+import { Plus, Tag, MapPin, Trash2, Camera, X, Image as ImageIcon, Download } from 'lucide-react';
 import memoryService from '../../services/memory.service';
 import type { MemoryPhoto } from '../../services/memory.service';
 import { getAssetUrl } from '../../config';
@@ -12,6 +12,7 @@ interface PhotoGalleryProps {
 
 const PhotoGallery: React.FC<PhotoGalleryProps> = ({ tripId, photos, onRefresh }) => {
   const [isUploading, setIsUploading] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState<MemoryPhoto | null>(null);
   const [uploadData, setUploadData] = useState({
     file: null as File | null,
     title: '',
@@ -152,7 +153,11 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ tripId, photos, onRefresh }
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {photos.map(photo => (
-          <div key={photo.id} className="group relative bg-white/5 rounded-[2.5rem] overflow-hidden border border-white/10 hover:border-primary/30 transition-all aspect-[4/5] shadow-2xl">
+          <div 
+            key={photo.id} 
+            className="group relative bg-white/5 rounded-[2.5rem] overflow-hidden border border-white/10 hover:border-primary/30 transition-all aspect-[4/5] shadow-2xl cursor-zoom-in"
+            onClick={() => setSelectedPhoto(photo)}
+          >
             <img 
               src={getAssetUrl(photo.filePath)} 
               alt={photo.title}
@@ -195,6 +200,53 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ tripId, photos, onRefresh }
           </div>
         )}
       </div>
+      
+      {selectedPhoto && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 md:p-12 animate-in fade-in duration-300">
+          <div className="absolute inset-0 bg-slate-950/95 backdrop-blur-2xl" onClick={() => setSelectedPhoto(null)} />
+          <button 
+            onClick={() => setSelectedPhoto(null)}
+            className="absolute top-10 right-10 w-16 h-16 bg-white/10 hover:bg-white/20 rounded-2xl flex items-center justify-center text-white transition-all z-20"
+          >
+            <X size={32} />
+          </button>
+          
+          <div className="relative max-w-7xl max-h-full flex flex-col items-center animate-in zoom-in-95 duration-500">
+            <img 
+              src={getAssetUrl(selectedPhoto.filePath)} 
+              alt={selectedPhoto.title}
+              className="max-w-full max-h-[80vh] object-contain rounded-[3rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.8)] border border-white/10"
+              onError={(e) => {
+                 (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1500673922987-e212871fec22?auto=format&fit=crop&q=80&w=1200';
+              }}
+            />
+            <div className="mt-8 text-center flex flex-col items-center gap-4">
+               <div>
+                 <h3 className="text-3xl font-black text-white mb-2">{selectedPhoto.title}</h3>
+                 <div className="flex items-center justify-center gap-3 text-primary text-xs font-black uppercase tracking-[0.3em]">
+                   <MapPin size={16} />
+                   {selectedPhoto.location}
+                 </div>
+               </div>
+               
+               <a 
+                 href={getAssetUrl(selectedPhoto.filePath)} 
+                 download={selectedPhoto.title || 'Voyager_Memory'}
+                 className="mt-4 px-8 py-4 bg-white/10 hover:bg-primary text-white rounded-2xl flex items-center gap-3 transition-all font-black uppercase tracking-widest text-[10px] group"
+                 onClick={() => {
+                   // Ensure it's a download
+                   if (selectedPhoto.filePath.startsWith('http')) {
+                     // If it's a remote URL, download might need different handling but usually this works
+                   }
+                 }}
+               >
+                 <Download size={18} className="group-hover:translate-y-0.5 transition-transform" />
+                 Download Original
+               </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

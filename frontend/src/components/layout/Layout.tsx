@@ -82,8 +82,8 @@ const Layout = ({ children, showNav = true }: LayoutProps) => {
       {/* SideNavBar / Mobile Drawer */}
       <aside
         className={`flex flex-col z-50 bg-card border-r border-border shadow-[0_0_50px_rgba(0,0,0,0.1)] transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${isSmallScreen
-            ? `fixed left-0 top-0 h-full w-80 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
-            : `relative h-screen shrink-0 ${isCollapsed ? 'w-24' : 'w-80'}`
+          ? `fixed left-0 top-0 h-full w-80 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
+          : `relative h-screen shrink-0 ${isCollapsed ? 'w-24' : 'w-80'}`
           }`}
       >
         {/* Branding Area */}
@@ -259,7 +259,7 @@ const Layout = ({ children, showNav = true }: LayoutProps) => {
                 <p className="text-sm font-black text-foreground tracking-tight group-hover:text-primary transition-colors">{fullName}</p>
                 <div className="flex items-center justify-end gap-1.5 mt-0.5">
                   <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
-                  <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] italic">Verified Agent</span>
+                  <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] italic">Verified</span>
                 </div>
               </div>
               <div className="relative">

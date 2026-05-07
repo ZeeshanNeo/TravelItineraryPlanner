@@ -31,4 +31,9 @@ namespace Application.DTOs.TravelDocs
         public string Name { get; set; }
         public int Quantity { get; set; } = 1;
     }
+
+    public class UpdatePackingItemRequest
+    {
+        public bool IsPacked { get; set; }
+    }
 }

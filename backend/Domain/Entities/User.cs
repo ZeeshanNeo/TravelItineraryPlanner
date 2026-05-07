@@ -19,6 +19,7 @@ public class User
     public DateTime UpdatedAt { get; set; }
     public int FailedLoginAttempts { get; set; }
     public DateTime? LockedUntil { get; set; }
+    public UserRole Role { get; set; } = UserRole.User;
 
     public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
     public ICollection<PasswordResetToken> PasswordResetTokens { get; set; } = new List<PasswordResetToken>();

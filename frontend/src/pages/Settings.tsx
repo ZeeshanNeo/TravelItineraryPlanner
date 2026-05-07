@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { 
-  Shield, 
-  Globe, Moon, CreditCard, 
+import {
+  Shield,
+  Globe, Moon, CreditCard,
   ChevronRight,
   Mail, Phone, Lock
 } from 'lucide-react';
@@ -64,17 +64,15 @@ const Settings = () => {
                         )}
                       </div>
                     </div>
-                    
+
                     {item.type === 'toggle' ? (
-                      <button 
+                      <button
                         onClick={() => item.setter?.(!item.value)}
-                        className={`w-14 h-8 rounded-full relative transition-colors duration-300 ${
-                          item.value ? 'bg-indigo-600' : 'bg-slate-200'
-                        }`}
+                        className={`w-14 h-8 rounded-full relative transition-colors duration-300 ${item.value ? 'bg-indigo-600' : 'bg-slate-200'
+                          }`}
                       >
-                        <div className={`absolute top-1 left-1 w-6 h-6 bg-card rounded-full transition-transform duration-300 ${
-                          item.value ? 'translate-x-6' : ''
-                        }`} />
+                        <div className={`absolute top-1 left-1 w-6 h-6 bg-card rounded-full transition-transform duration-300 ${item.value ? 'translate-x-6' : ''
+                          }`} />
                       </button>
                     ) : (
                       <div className="flex items-center gap-4">

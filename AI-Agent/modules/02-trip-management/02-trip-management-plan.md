@@ -1,11 +1,11 @@
 Create plans/trip-management.md for the Trip Management module.
 
 Strictly follow:
-- persona.md
-- project-rules.md
-- save-tokens.md
-- kpi-contract.md
-- project-architecture.md
+- global/Personas/fullstack-dev-persona.md
+- global/project-boundaries.md
+- global/save-tokens.md
+- global/kpi-contract.md
+- global/project-architecture.md
 
 Requirements:
 - Cover all Trip Management KPIs

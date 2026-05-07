@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Download, Plane, Hotel, Car, Utensils,
   ChevronRight, MapPin, ShieldCheck,
@@ -14,9 +14,11 @@ import travelDocService from '../services/travelDoc.service';
 import type { EmergencyContact, LocalInfoNote } from '../services/travelDoc.service';
 import { tripService } from '../services/trip.service';
 import type { TripResponse } from '../services/trip.service';
+import ExportManifestModal from '../components/itinerary/ExportManifestModal';
 
 const AmalfiBookings = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [trip, setTrip] = useState<TripResponse | null>(null);
   const [summary, setSummary] = useState<BookingSummaryResponse | null>(null);
   const [budgetSummary, setBudgetSummary] = useState<BudgetSummary | null>(null);
@@ -25,6 +27,19 @@ const AmalfiBookings = () => {
   const [localInfo, setLocalInfo] = useState<LocalInfoNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+
+  const handleExportManifest = () => {
+    setExportModalOpen(true);
+  };
+
+  const handleManageAll = () => {
+    navigate(`/trip/${id}/logistics`);
+  };
+
+  const handleReviewAssurance = () => {
+    navigate(`/trip/${id}/vault`);
+  };
 
   useEffect(() => {
     if (id) {
@@ -128,7 +143,10 @@ const AmalfiBookings = () => {
             </p>
           </div>
           <div className="flex items-center gap-4">
-             <button className="h-16 px-8 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-2xl font-black uppercase tracking-widest flex items-center gap-3 hover:scale-[1.02] transition-all shadow-xl shadow-slate-900/20">
+             <button 
+               onClick={handleExportManifest}
+               className="h-16 px-8 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-2xl font-black uppercase tracking-widest flex items-center gap-3 hover:scale-[1.02] transition-all shadow-xl shadow-slate-900/20"
+             >
                 <Download size={20} />
                 Export Manifest
              </button>
@@ -157,7 +175,12 @@ const AmalfiBookings = () => {
                        </div>
                        <h2 className="text-2xl font-black tracking-tight text-foreground">Air Travel</h2>
                     </div>
-                    <button className="text-xs font-black uppercase tracking-widest text-primary hover:underline">Manage All</button>
+                    <button 
+                      onClick={handleManageAll}
+                      className="text-xs font-black uppercase tracking-widest text-primary hover:underline"
+                    >
+                      Manage All
+                    </button>
                  </div>
                  
                  <div className="space-y-4">
@@ -206,11 +229,19 @@ const AmalfiBookings = () => {
 
               {/* Accommodations Segment */}
               <section className="space-y-6">
-                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-500">
-                       <Hotel size={24} />
+                 <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                       <div className="w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-500">
+                          <Hotel size={24} />
+                       </div>
+                       <h2 className="text-2xl font-black tracking-tight text-foreground">Accommodations</h2>
                     </div>
-                    <h2 className="text-2xl font-black tracking-tight text-foreground">Accommodations</h2>
+                    <button 
+                      onClick={handleManageAll}
+                      className="text-xs font-black uppercase tracking-widest text-primary hover:underline"
+                    >
+                      Manage All
+                    </button>
                  </div>
                  
                  <div className="space-y-6">
@@ -263,11 +294,19 @@ const AmalfiBookings = () => {
 
               {/* Ground & Activities */}
               <section className="space-y-6">
-                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-500">
-                       <Car size={24} />
+                 <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                       <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-500">
+                          <Car size={24} />
+                       </div>
+                       <h2 className="text-2xl font-black tracking-tight text-foreground">Ground & Activities</h2>
                     </div>
-                    <h2 className="text-2xl font-black tracking-tight text-foreground">Ground & Activities</h2>
+                    <button 
+                      onClick={handleManageAll}
+                      className="text-xs font-black uppercase tracking-widest text-primary hover:underline"
+                    >
+                      Manage All
+                    </button>
                  </div>
                  
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -329,7 +368,10 @@ const AmalfiBookings = () => {
                       </div>
                     )}
                  </div>
-                 <button className="w-full py-5 bg-white text-slate-900 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-100 transition-colors">
+                 <button 
+                    onClick={handleReviewAssurance}
+                    className="w-full py-5 bg-white text-slate-900 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-100 transition-colors"
+                 >
                     Review Trip Assurance
                  </button>
               </div>
@@ -353,6 +395,13 @@ const AmalfiBookings = () => {
            </div>
         </div>
       </div>
+      {exportModalOpen && trip && (
+        <ExportManifestModal
+          isOpen={exportModalOpen}
+          onClose={() => setExportModalOpen(false)}
+          trip={trip}
+        />
+      )}
     </Layout>
   );
 };

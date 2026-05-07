@@ -1,7 +1,7 @@
 # Project Rules
 
 ## Architecture Rules
-- Use .NET 8 Clean Architecture
+- Use .NET 10 Clean Architecture
 - Use Service + Repository pattern
 - DO NOT use CQRS
 - DO NOT use MediatR

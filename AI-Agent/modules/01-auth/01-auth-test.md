@@ -1,7 +1,7 @@
 Load File:
 - tester-persona.md
-- project-rules.md
-- kpi-contract.md
+- global/project-boundaries.md
+- global/kpi-contract.md
 - plans/auth.md
 - testing/module-test-cases.md
 - save-tokens.md

@@ -7,12 +7,14 @@ interface SortableActivityCardProps {
   activity: ActivityResponse;
   onEdit?: (activity: ActivityResponse) => void;
   onDelete?: (activityId: string) => void;
+  isCompact?: boolean;
 }
 
 const SortableActivityCard = ({
   activity,
   onEdit,
   onDelete,
+  isCompact
 }: SortableActivityCardProps) => {
   const {
     attributes,
@@ -45,6 +47,7 @@ const SortableActivityCard = ({
             onDelete={onDelete}
             draggable={true}
             dragHandleProps={{ ...attributes, ...listeners }}
+            isCompact={isCompact}
           />
         </div>
       </div>

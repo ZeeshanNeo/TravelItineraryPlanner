@@ -28,6 +28,7 @@ public class TokenService : ITokenService
             new Claim(ClaimTypes.Email, user.Email),
             new Claim(ClaimTypes.Name, $"{user.FirstName} {user.LastName}"),
             new Claim("fullName", $"{user.FirstName} {user.LastName}"),
+            new Claim(ClaimTypes.Role, user.Role.ToString()),
         };
 
         var tokenDescriptor = new SecurityTokenDescriptor

@@ -15,6 +15,7 @@ import Expenses from './pages/Expenses';
 import Collaboration from './pages/Collaboration';
 import Vault from './pages/Vault';
 import Settings from './pages/Settings';
+import AdminDashboard from './pages/AdminDashboard';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { SearchProvider } from './context/SearchContext';
 import './App.css';
@@ -73,6 +74,11 @@ function App() {
                 <Route path="/settings" element={
                   <ProtectedRoute>
                     <Settings />
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin" element={
+                  <ProtectedRoute requiredRole="Admin">
+                    <AdminDashboard />
                   </ProtectedRoute>
                 } />
 

@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,8 +36,14 @@ builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(optio
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Voyager Pro API", Version = "v1" });
     c.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
+    c.CustomSchemaIds(type => type.FullName);
 });
+
+
+
+
 
 // Add CORS
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? new[] { "http://localhost:3000" };
@@ -114,7 +121,10 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+});
 
 var app = builder.Build();
 
@@ -200,10 +210,32 @@ if (app.Environment.IsDevelopment())
     try
     {
         dbContext.Database.Migrate();
+        
+        // Seed Admin User
+        if (!dbContext.Users.Any(u => u.Role == Domain.Entities.UserRole.Admin))
+        {
+            var passwordHasher = scope.ServiceProvider.GetRequiredService<Application.Common.Interfaces.IPasswordHasher>();
+            var adminUser = new Domain.Entities.User
+            {
+                Id = Guid.NewGuid(),
+                Email = "admin@voyager.pro",
+                FirstName = "System",
+                LastName = "Administrator",
+                PasswordHash = passwordHasher.HashPassword("Admin123!"),
+                Role = Domain.Entities.UserRole.Admin,
+                IsActive = true,
+                EmailVerified = true,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            dbContext.Users.Add(adminUser);
+            dbContext.SaveChanges();
+            Console.WriteLine("[DATABASE SEED] Default Admin user created: admin@voyager.pro / Admin123!");
+        }
     }
-    catch (Exception ex) when (ex.Message.Contains("There is already an object named", StringComparison.OrdinalIgnoreCase))
+    catch (Exception ex)
     {
-        Console.WriteLine("[DATABASE MIGRATION] Existing development schema detected without complete migration history. Continuing without destructive reset.");
+        Console.WriteLine($"[DATABASE ERROR] Migration or Seeding failed: {ex.Message}");
     }
 }
 

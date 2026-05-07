@@ -11,7 +11,7 @@ interface TaskBoardProps {
 const TaskBoard: React.FC<TaskBoardProps> = ({ tripId, members }) => {
   const [tasks, setTasks] = useState<TripTask[]>([]);
   const [isAdding, setIsAdding] = useState(false);
-  const [newTask, setNewTask] = useState({ title: '', assignedToUserId: '', dueDate: '' });
+  const [newTask, setNewTask] = useState({ title: '', description: '', assignedToUserId: '', dueDate: '' });
 
   useEffect(() => {
     fetchTasks();
@@ -26,10 +26,11 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ tripId, members }) => {
     e.preventDefault();
     await collaborationService.createTask(tripId, {
       title: newTask.title,
+      description: newTask.description || newTask.title,
       assignedToUserId: newTask.assignedToUserId || null,
       dueDate: newTask.dueDate || null
     });
-    setNewTask({ title: '', assignedToUserId: '', dueDate: '' });
+    setNewTask({ title: '', description: '', assignedToUserId: '', dueDate: '' });
     setIsAdding(false);
     fetchTasks();
   };
@@ -65,6 +66,12 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ tripId, members }) => {
             value={newTask.title}
             onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
             className="w-full bg-transparent text-white text-lg font-bold border-none focus:ring-0 placeholder:text-gray-600"
+          />
+          <textarea
+            placeholder="Add some details..."
+            value={newTask.description}
+            onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none resize-none min-h-[100px]"
           />
           <div className="flex flex-wrap gap-4">
             <select
