@@ -8,6 +8,7 @@ export interface MemoryPhoto {
   filePath: string;
   takenAt: string;
   location: string;
+  activityId?: string;
   tags: MemoryTag[];
 }
 
@@ -18,6 +19,7 @@ export interface JournalEntry {
   content: string;
   entryDate: string;
   location: string;
+  activityId?: string;
   createdAt: string;
 }
 

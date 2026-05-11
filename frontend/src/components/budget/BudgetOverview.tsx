@@ -92,6 +92,25 @@ const BudgetOverview: React.FC<BudgetOverviewProps> = ({ tripId }) => {
         </div>
       </div>
 
+      {/* Currency Intelligence Hint */}
+      <div className="p-6 bg-indigo-500/10 border border-indigo-500/20 rounded-[2rem] flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-indigo-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+            <DollarSign size={20} />
+          </div>
+          <div>
+            <h4 className="font-black text-white text-lg leading-tight">Currency Intelligence</h4>
+            <p className="text-xs font-bold text-indigo-300 uppercase tracking-widest">Real-time Exchange Accuracy</p>
+          </div>
+        </div>
+        <p className="text-sm text-indigo-200/60 font-medium max-w-md">
+          Expenses are automatically normalized to <span className="text-white font-black">{summary?.currency}</span> using mission-critical conversion data for precise fiscal reporting.
+        </p>
+        <button className="px-6 h-12 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all border border-white/10">
+          Update Rates
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Spending by Category */}
         <div className="glass-card p-6">

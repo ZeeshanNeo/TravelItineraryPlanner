@@ -10,6 +10,8 @@ import { tripService } from '../services/trip.service';
 import type { TripResponse } from '../services/trip.service';
 import EditTripModal from '../components/trips/EditTripModal';
 import { useSearch } from '../context/SearchContext';
+import CurrencyConverter from '../components/shared/tools/CurrencyConverter';
+import TimeZoneCalculator from '../components/shared/tools/TimeZoneCalculator';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -228,6 +230,21 @@ const Dashboard = () => {
             ))}
           </div>
         )}
+
+        {/* Travel Toolbox */}
+        <div className="pt-12 border-t border-slate-100">
+          <div className="flex items-center justify-between mb-10">
+            <div>
+              <h2 className="text-4xl font-black text-slate-900 tracking-tighter leading-none mb-2">Travel Toolbox</h2>
+              <p className="text-slate-500 font-medium">Global intelligence for your next adventure.</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <CurrencyConverter />
+            <TimeZoneCalculator />
+          </div>
+        </div>
 
         {/* Stats Row */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 pt-12 border-t border-slate-100">

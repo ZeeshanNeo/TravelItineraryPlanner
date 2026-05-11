@@ -30,6 +30,11 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Server=db;Database=TravelItineraryPlanner;User Id=sa;Password=${MSSQL_SA_PASSWORD:-Password123!};TrustServerCertificate=True;
       - Jwt__Secret=${JWT_SECRET:-your-super-secret-key-with-at-least-32-characters}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     depends_on:
       db:
         condition: service_healthy
@@ -45,9 +50,10 @@ services:
       dockerfile: deployment/frontend.Dockerfile
     container_name: voyager-frontend
     ports:
-      - "80:80"
+      - "8085:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - voyager-network
     restart: always

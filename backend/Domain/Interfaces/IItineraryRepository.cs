@@ -16,5 +16,6 @@ public interface IItineraryRepository
     Task AddAsync(Itinerary itinerary, CancellationToken cancellationToken = default);
     void Update(Itinerary itinerary);
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<Itinerary?> GetByShareTokenAsync(string token, CancellationToken cancellationToken = default);
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

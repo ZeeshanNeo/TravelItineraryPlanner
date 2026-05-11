@@ -120,6 +120,7 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.TravelType).HasConversion<string>().IsRequired();
             entity.Property(e => e.Purpose).HasMaxLength(500);
             entity.Property(e => e.Notes).HasMaxLength(2000);
+            entity.Property(e => e.DestinationTimeZoneId).HasMaxLength(50);
             
             entity.Property(e => e.TravelCompanions)
                 .HasConversion(
@@ -161,6 +162,8 @@ public class ApplicationDbContext : DbContext
 
             entity.Property(e => e.IsPublic).HasDefaultValue(false);
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
+            entity.Property(e => e.ShareToken).HasMaxLength(100);
+            entity.Property(e => e.ShareTokenExpiresAt);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
             entity.Property(e => e.UpdatedAt).HasDefaultValueSql("GETUTCDATE()");
 
@@ -360,6 +363,8 @@ public class ApplicationDbContext : DbContext
             entity.HasIndex(e => e.TripId);
             entity.Property(e => e.Title).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Category).HasMaxLength(50);
+            entity.Property(e => e.IsTemplate).HasDefaultValue(false);
+            entity.Property(e => e.TemplateCategory).HasMaxLength(50);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
             entity.Property(e => e.UpdatedAt).HasDefaultValueSql("GETUTCDATE()");
 
@@ -437,7 +442,7 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.FileName).IsRequired().HasMaxLength(255);
             entity.Property(e => e.FilePath).IsRequired().HasMaxLength(500);
             entity.Property(e => e.ContentType).HasMaxLength(100);
-            entity.Property(e => e.UploadDate).HasDefaultValueSql("GETUTCDATE()");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
 
             entity.HasOne(e => e.Trip)
                 .WithMany()
@@ -474,6 +479,11 @@ public class ApplicationDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.TripId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Activity)
+                .WithMany()
+                .HasForeignKey(e => e.ActivityId)
+                .OnDelete(DeleteBehavior.NoAction);
         });
 
         modelBuilder.Entity<JournalEntry>(entity =>
@@ -490,6 +500,11 @@ public class ApplicationDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.TripId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Activity)
+                .WithMany()
+                .HasForeignKey(e => e.ActivityId)
+                .OnDelete(DeleteBehavior.NoAction);
         });
 
         modelBuilder.Entity<MemoryTag>(entity =>

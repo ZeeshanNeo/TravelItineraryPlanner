@@ -7,22 +7,24 @@ interface JournalManagerProps {
   tripId: string;
   journals: JournalEntry[];
   onRefresh: () => void;
+  activities?: any[];
 }
 
-const JournalManager: React.FC<JournalManagerProps> = ({ tripId, journals, onRefresh }) => {
+const JournalManager: React.FC<JournalManagerProps> = ({ tripId, journals, onRefresh, activities }) => {
   const [isWriting, setIsWriting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState({
     title: '',
     content: '',
     entryDate: new Date().toISOString().split('T')[0],
-    location: ''
+    location: '',
+    activityId: ''
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await memoryService.createJournal(tripId, formData);
-    setFormData({ title: '', content: '', entryDate: new Date().toISOString().split('T')[0], location: '' });
+    setFormData({ title: '', content: '', entryDate: new Date().toISOString().split('T')[0], location: '', activityId: '' });
     setIsWriting(false);
     onRefresh();
   };
@@ -104,6 +106,22 @@ const JournalManager: React.FC<JournalManagerProps> = ({ tripId, journals, onRef
                 rows={8}
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 resize-none"
               />
+
+              {activities && activities.length > 0 && (
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Link to Activity</label>
+                  <select
+                    value={formData.activityId}
+                    onChange={(e) => setFormData({ ...formData, activityId: e.target.value })}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                  >
+                    <option value="">No specific activity</option>
+                    {activities.map((act: any) => (
+                      <option key={act.id} value={act.id}>{act.title}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div className="flex gap-3 pt-4">
                 <button

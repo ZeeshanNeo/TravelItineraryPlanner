@@ -109,7 +109,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ initialData, onSubmit, onCanc
   };
 
   return (
-    <div className="bg-card rounded-[2.5rem] p-8 max-w-4xl w-full mx-auto shadow-2xl overflow-hidden">
+    <div className="bg-white dark:bg-card rounded-[2.5rem] p-8 max-w-4xl w-full mx-auto shadow-2xl overflow-y-auto max-h-[90vh] custom-scrollbar">
       <div className="flex items-center justify-between mb-10">
         <h2 className="text-3xl font-black text-foreground tracking-tight">
           {initialData ? 'Edit Booking' : 'Add New Booking'}

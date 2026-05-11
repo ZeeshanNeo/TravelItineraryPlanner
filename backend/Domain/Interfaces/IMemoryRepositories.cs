@@ -16,6 +16,7 @@ namespace Domain.Interfaces
         // Tagging
         Task AddTagToPhotoAsync(Guid photoId, Guid tagId);
         Task RemoveTagFromPhotoAsync(Guid photoId, Guid tagId);
+        Task SaveChangesAsync();
     }
 
     public interface IJournalRepository
@@ -25,6 +26,7 @@ namespace Domain.Interfaces
         Task<JournalEntry> AddAsync(JournalEntry entry);
         Task UpdateAsync(JournalEntry entry);
         Task DeleteAsync(JournalEntry entry);
+        Task SaveChangesAsync();
     }
 
     public interface ITagRepository
@@ -33,5 +35,6 @@ namespace Domain.Interfaces
         Task<MemoryTag> GetByNameAsync(string name);
         Task<IEnumerable<MemoryTag>> GetAllAsync();
         Task<MemoryTag> AddAsync(MemoryTag tag);
+        Task SaveChangesAsync();
     }
 }

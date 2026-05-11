@@ -105,11 +105,26 @@ A web application for planning and organizing travel itineraries, tracking trip 
 | User Guide | Comprehensive user documentation available | Pass |
 | Code Comments | Source code includes meaningful comments | Pass |
 
+### 12. Weather Intelligence
+| KPI | Description | Pass/Fail |
+|-----|-------------|-----------|
+| Destination Forecast | Display current weather and 5-day forecast for destinations | Pass |
+| Itinerary Integration | Show weather warnings for planned outdoor activities | Pass |
+| Caching Logic | Weather data is cached for 1 hour to reduce API calls | Pass |
+
+### 13. Timezone Management
+| KPI | Description | Pass/Fail |
+|-----|-------------|-----------|
+| Local Time Conversion | Automatically show local time for bookings and activities | Pass |
+| Timezone Offset Calculation | Display time difference between user and destination | Pass |
+| Date Rollover | Correctly handle activities spanning multiple days due to timezone | Pass |
+
 ## Technical Stack
 - **Frontend**: React.js with TypeScript and drag-and-drop libraries
-- **Backend**: .NET 8 (Clean Architecture)
+- **Backend**: .NET 10.0 (Clean Architecture)
 - **Database**: Microsoft SQL Server with EF Core ORM
 - **File Storage**: Local filesystem for documents and photos
+- **Weather API**: Mocked provider with fallback to OpenWeatherMap
 - **Authentication**: JWT with bcrypt password hashing
 - **Containerization**: Docker with docker-compose
 - **Testing**: Jest, React Testing Library, Supertest, xunit/ nunit

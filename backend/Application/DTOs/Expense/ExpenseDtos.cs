@@ -41,5 +41,7 @@ public class UpdateExpenseRequest
     public decimal? Amount { get; set; }
     public string? Currency { get; set; }
     public decimal? ExchangeRate { get; set; }
+    public Guid? BookingId { get; set; }
+    public Guid? ActivityId { get; set; }
     public DateTime? Date { get; set; }
 }

@@ -20,18 +20,7 @@ namespace Infrastructure.Services
 
         public async Task<TripTaskDto> CreateTaskAsync(Guid tripId, CreateTaskRequest request)
         {
-            var task = new TripTask
-            {
-                Id = Guid.NewGuid(),
-                TripId = tripId,
-                Title = request.Title,
-                Description = request.Description,
-                AssignedToUserId = request.AssignedToUserId,
-                Status = TripTaskStatus.ToDo,
-                DueDate = request.DueDate,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
+            var task = new TripTask(tripId, request.Title, request.Description, request.DueDate, request.AssignedToUserId);
 
             await _taskRepo.AddAsync(task);
             return MapToDto(task);
@@ -48,8 +37,7 @@ namespace Infrastructure.Services
             var task = await _taskRepo.GetByIdAsync(taskId);
             if (task == null) return null;
 
-            task.Status = Enum.Parse<TripTaskStatus>(status);
-            task.UpdatedAt = DateTime.UtcNow;
+            task.SetStatus(Enum.Parse<TripTaskStatus>(status));
 
             await _taskRepo.UpdateAsync(task);
             return MapToDto(task);
@@ -60,8 +48,7 @@ namespace Infrastructure.Services
             var task = await _taskRepo.GetByIdAsync(taskId);
             if (task == null) return null;
 
-            task.AssignedToUserId = userId;
-            task.UpdatedAt = DateTime.UtcNow;
+            task.UpdateDetails(task.Title, task.Description, task.DueDate, userId);
 
             await _taskRepo.UpdateAsync(task);
             return MapToDto(task);

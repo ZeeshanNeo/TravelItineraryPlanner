@@ -17,7 +17,7 @@ namespace Domain.Entities
         public TripRole Role { get; set; }
         public DateTime JoinedAt { get; set; }
 
-        public virtual Trip Trip { get; set; }
-        public virtual User User { get; set; }
+        public virtual Trip Trip { get; set; } = null!;
+        public virtual User User { get; set; } = null!;
     }
 }

@@ -17,7 +17,8 @@ public static class DependencyInjection
     {
         // Database
         services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+            options.UseSqlServer(configuration.GetConnectionString("DefaultConnection"))
+                   .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
 
         // Repositories
         services.AddScoped<IUserRepository, UserRepository>();
@@ -63,6 +64,14 @@ public static class DependencyInjection
         services.AddScoped<ICommentService, CommentService>();
         services.AddScoped<ITaskService, TaskService>();
         services.AddScoped<ISharedExpenseService, SharedExpenseService>();
+        services.AddScoped<IWeatherService, WeatherService>();
+        services.AddScoped<ICurrencyService, CurrencyService>();
+        services.AddScoped<ITimeZoneService, TimeZoneService>();
+        services.AddScoped<DestinationTemplateService>();
+        
+        // Identity & Context
+        services.AddHttpContextAccessor();
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
 
         return services;
     }

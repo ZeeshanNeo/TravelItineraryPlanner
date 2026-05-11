@@ -29,14 +29,7 @@ namespace Infrastructure.Services
         {
             await _splitRepo.DeleteByExpenseIdAsync(expenseId);
             
-            var newSplits = splits.Select(s => new ExpenseSplit
-            {
-                Id = Guid.NewGuid(),
-                ExpenseId = expenseId,
-                UserId = s.UserId,
-                Amount = s.Amount,
-                IsPaid = false
-            });
+            var newSplits = splits.Select(s => new ExpenseSplit(expenseId, s.UserId, s.Amount));
 
             await _splitRepo.AddRangeAsync(newSplits);
         }

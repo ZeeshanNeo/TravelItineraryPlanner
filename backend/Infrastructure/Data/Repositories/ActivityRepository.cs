@@ -86,8 +86,7 @@ public class ActivityRepository : IActivityRepository
 
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        // Commit is coordinated by the service layer so this repository method
-        // behaves consistently with Add/Update/Delete operations.
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
     public async Task UpdateOrderAsync(Guid itineraryDayId, List<Guid> activityIdsInOrder, CancellationToken cancellationToken = default)
@@ -102,8 +101,7 @@ public class ActivityRepository : IActivityRepository
         {
             if (activityDict.TryGetValue(activityIdsInOrder[i], out var activity))
             {
-                activity.Order = i + 1;
-                _context.Activities.Update(activity);
+                activity.UpdateOrder(i + 1);
             }
         }
 

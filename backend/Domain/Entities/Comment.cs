@@ -1,19 +1,42 @@
 using System;
+using Domain.Common;
 
 namespace Domain.Entities
 {
-    public class Comment
+    public class Comment : BaseEntity
     {
-        public Guid Id { get; set; }
-        public Guid TripId { get; set; }
-        public Guid UserId { get; set; }
-        public Guid? ActivityId { get; set; } // Can be linked to a specific activity
-        public string Text { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public DateTime? UpdatedAt { get; set; }
+        public Guid TripId { get; private set; }
+        public Guid UserId { get; private set; }
+        public Guid? ActivityId { get; private set; }
+        public string Text { get; private set; }
 
-        public virtual Trip Trip { get; set; }
-        public virtual User User { get; set; }
-        public virtual Activity Activity { get; set; }
+        // Navigation properties
+        public virtual Trip Trip { get; private set; } = null!;
+        public virtual User User { get; private set; } = null!;
+        public virtual Activity? Activity { get; private set; }
+
+        private Comment() { } // For EF
+
+        public Comment(Guid tripId, Guid userId, string text, Guid? activityId = null)
+        {
+            if (tripId == Guid.Empty) throw new ArgumentException("TripId is required.", nameof(tripId));
+            if (userId == Guid.Empty) throw new ArgumentException("UserId is required.", nameof(userId));
+            if (string.IsNullOrWhiteSpace(text)) throw new ArgumentException("Comment text is required.", nameof(text));
+
+            Id = Guid.NewGuid();
+            TripId = tripId;
+            UserId = userId;
+            Text = text;
+            ActivityId = activityId;
+            CreatedAt = DateTime.UtcNow;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void UpdateText(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) throw new ArgumentException("Comment text is required.", nameof(text));
+            Text = text;
+            UpdatedAt = DateTime.UtcNow;
+        }
     }
 }

@@ -179,23 +179,46 @@ const Register = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-4">Password</label>
-                  <Input
-                    name="password"
-                    type="password"
-                    required
-                    placeholder="••••••••"
-                    value={formData.password}
-                    onChange={handleChange}
-                    error={errors.password}
-                    fullWidth
-                    leftIcon={<Lock className="h-4 w-4 text-indigo-400" />}
-                    className="bg-black/30 border-white/10 text-white placeholder:text-muted-foreground focus:bg-black/50"
-                  />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-4">Password</label>
+                    <Input
+                      name="password"
+                      type="password"
+                      required
+                      placeholder="••••••••"
+                      value={formData.password}
+                      onChange={handleChange}
+                      error={errors.password}
+                      fullWidth
+                      leftIcon={<Lock className="h-4 w-4 text-indigo-400" />}
+                      className="bg-black/30 border-white/10 text-white placeholder:text-muted-foreground focus:bg-black/50"
+                    />
+                  </div>
+                  
+                  {/* Password Requirement Hints */}
+                  <div className="px-4 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-1.5 h-1.5 rounded-full transition-colors ${formData.password.length >= 8 ? 'bg-indigo-400' : 'bg-white/10'}`} />
+                      <span className={`text-[9px] font-bold uppercase tracking-wider ${formData.password.length >= 8 ? 'text-indigo-300' : 'text-muted-foreground'}`}>Min. 8 characters</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-1.5 h-1.5 rounded-full transition-colors ${/[A-Z]/.test(formData.password) ? 'bg-indigo-400' : 'bg-white/10'}`} />
+                      <span className={`text-[9px] font-bold uppercase tracking-wider ${/[A-Z]/.test(formData.password) ? 'text-indigo-300' : 'text-muted-foreground'}`}>One uppercase letter</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-1.5 h-1.5 rounded-full transition-colors ${/[0-9]/.test(formData.password) ? 'bg-indigo-400' : 'bg-white/10'}`} />
+                      <span className={`text-[9px] font-bold uppercase tracking-wider ${/[0-9]/.test(formData.password) ? 'text-indigo-300' : 'text-muted-foreground'}`}>One number</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-1.5 h-1.5 rounded-full transition-colors ${/[^A-Za-z0-9]/.test(formData.password) ? 'bg-indigo-400' : 'bg-white/10'}`} />
+                      <span className={`text-[9px] font-bold uppercase tracking-wider ${/[^A-Za-z0-9]/.test(formData.password) ? 'text-indigo-300' : 'text-muted-foreground'}`}>One special character</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-1">
+                
+                <div className="space-y-1 self-start">
                   <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-4">Confirm</label>
                   <Input
                     name="confirmPassword"

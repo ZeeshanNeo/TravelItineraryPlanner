@@ -1,3 +1,4 @@
+using Application.Common.Models;
 using Application.DTOs.TravelDocs;
 using Application.Services;
 using Domain.Interfaces;
@@ -7,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Mapster;
 
 namespace Infrastructure.Services
 {
@@ -18,6 +20,8 @@ namespace Infrastructure.Services
         private readonly ITravelDocumentRepository _docRepo;
         private readonly ILocalInfoRepository _infoRepo;
         private readonly IFileStorageService _fileStorage;
+        private readonly ITripRepository _tripRepo;
+        private readonly DestinationTemplateService _templateService;
         private readonly ApplicationDbContext _context;
 
         public TravelDocService(
@@ -27,6 +31,8 @@ namespace Infrastructure.Services
             ITravelDocumentRepository docRepo,
             ILocalInfoRepository infoRepo,
             IFileStorageService fileStorage,
+            ITripRepository tripRepo,
+            DestinationTemplateService templateService,
             ApplicationDbContext context)
         {
             _packingRepo = packingRepo;
@@ -35,333 +41,404 @@ namespace Infrastructure.Services
             _docRepo = docRepo;
             _infoRepo = infoRepo;
             _fileStorage = fileStorage;
+            _tripRepo = tripRepo;
+            _templateService = templateService;
             _context = context;
         }
 
+        public async Task<Result<ChecklistDto>> AutoGenerateChecklistAsync(Guid tripId, Guid userId)
+        {
+            var trip = await _tripRepo.GetByIdAndUserIdAsync(tripId, userId);
+            if (trip == null) return Result<ChecklistDto>.Failure("Trip not found.");
+
+            var checklist = new TravelChecklist(tripId, "Trip Preparation Checklist");
+            var items = _templateService.GetChecklistItems(trip.Destination);
+
+            foreach (var item in items)
+            {
+                checklist.AddItem(item.Task, trip.StartDate.AddDays(-item.DaysBefore));
+            }
+
+            await _checklistRepo.AddAsync(checklist);
+            return Result<ChecklistDto>.Success(checklist.Adapt<ChecklistDto>());
+        }
+
+        private async Task<bool> HasAccessAsync(Guid tripId, Guid userId)
+        {
+            var trip = await _tripRepo.GetByIdAndUserIdAsync(tripId, userId);
+            return trip != null;
+        }
+
         // Packing List
-        public async Task<IEnumerable<PackingListDto>> GetPackingListsAsync(Guid tripId)
+        public async Task<Result<IEnumerable<PackingListDto>>> GetPackingListsAsync(Guid tripId, Guid userId)
         {
+            if (!await HasAccessAsync(tripId, userId))
+                return Result<IEnumerable<PackingListDto>>.Failure("Trip not found or access denied.");
+
             var lists = await _packingRepo.GetByTripIdAsync(tripId);
-            return lists.Select(l => MapPackingListToDto(l));
+            return Result<IEnumerable<PackingListDto>>.Success(lists.Select(l => l.Adapt<PackingListDto>()));
         }
 
-        public async Task<PackingListDto> CreatePackingListAsync(Guid tripId, CreatePackingListRequest request)
+        public async Task<Result<PackingListDto>> CreatePackingListAsync(Guid tripId, CreatePackingListRequest request, Guid userId)
         {
-            var list = new PackingList
+            if (!await HasAccessAsync(tripId, userId))
+                return Result<PackingListDto>.Failure("Trip not found or access denied.");
+
+            try
             {
-                Id = Guid.NewGuid(),
-                TripId = tripId,
-                Title = request.Title,
-                Category = request.Category,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
-            await _packingRepo.AddAsync(list);
-            return MapPackingListToDto(list);
-        }
-
-        public async Task<PackingListDto> AddPackingItemAsync(Guid listId, AddPackingItemRequest request)
-        {
-            var list = await _packingRepo.GetByIdAsync(listId);
-            if (list == null) return null;
-
-            var item = new PackingItem
+                var list = new PackingList(tripId, request.Title, request.Category);
+                await _packingRepo.AddAsync(list);
+                return Result<PackingListDto>.Success(list.Adapt<PackingListDto>());
+            }
+            catch (ArgumentException ex)
             {
-                Id = Guid.NewGuid(),
-                PackingListId = listId,
-                Name = request.Name,
-                Quantity = request.Quantity,
-                IsPacked = false
-            };
-            
-            // Add directly to DbContext to avoid tracking conflicts with parent Update
-            await _context.PackingItems.AddAsync(item);
-            await _context.SaveChangesAsync();
-
-            // Refresh list to include new item for DTO mapping
-            var updatedList = await _packingRepo.GetByIdAsync(listId);
-            return MapPackingListToDto(updatedList);
-        }
-
-        public async Task UpdatePackingItemAsync(Guid itemId, bool isPacked)
-        {
-            var item = await _context.PackingItems.FindAsync(itemId);
-            if (item != null)
-            {
-                item.IsPacked = isPacked;
-                await _context.SaveChangesAsync();
+                return Result<PackingListDto>.Failure(ex.Message);
             }
         }
 
-        public async Task DeletePackingListAsync(Guid listId)
+        public async Task<Result<PackingListDto>> AddPackingItemAsync(Guid listId, AddPackingItemRequest request, Guid userId)
         {
             var list = await _packingRepo.GetByIdAsync(listId);
-            if (list != null) await _packingRepo.DeleteAsync(list);
+            if (list == null || !list.TripId.HasValue || !await HasAccessAsync(list.TripId.Value, userId))
+                return Result<PackingListDto>.Failure("Packing list not found or access denied.");
+
+            try
+            {
+                list.AddItem(request.Name, request.Quantity);
+                await _packingRepo.UpdateAsync(list);
+                return Result<PackingListDto>.Success(list.Adapt<PackingListDto>());
+            }
+            catch (ArgumentException ex)
+            {
+                return Result<PackingListDto>.Failure(ex.Message);
+            }
         }
 
-        public async Task DeletePackingItemAsync(Guid itemId)
+        public async Task<Result> UpdatePackingItemAsync(Guid itemId, bool isPacked, Guid userId)
         {
             var item = await _context.PackingItems.FindAsync(itemId);
-            if (item != null)
+            if (item == null) return Result.Failure("Packing item not found.");
+
+            var list = await _packingRepo.GetByIdAsync(item.PackingListId);
+            if (list == null || !list.TripId.HasValue || !await HasAccessAsync(list.TripId.Value, userId))
+                return Result.Failure("Access denied.");
+
+            item.SetPackedStatus(isPacked);
+            await _context.SaveChangesAsync();
+            return Result.Success();
+        }
+
+        public async Task<Result> DeletePackingListAsync(Guid listId, Guid userId)
+        {
+            var list = await _packingRepo.GetByIdAsync(listId);
+            if (list == null || !list.TripId.HasValue || !await HasAccessAsync(list.TripId.Value, userId))
+                return Result.Failure("Packing list not found or access denied.");
+
+            await _packingRepo.DeleteAsync(list);
+            return Result.Success();
+        }
+
+        public async Task<Result> DeletePackingItemAsync(Guid itemId, Guid userId)
+        {
+            var item = await _context.PackingItems.FindAsync(itemId);
+            if (item == null) return Result.Failure("Packing item not found.");
+
+            var list = await _packingRepo.GetByIdAsync(item.PackingListId);
+            if (list == null || !list.TripId.HasValue || !await HasAccessAsync(list.TripId.Value, userId))
+                return Result.Failure("Access denied.");
+
+            _context.PackingItems.Remove(item);
+            await _context.SaveChangesAsync();
+            return Result.Success();
+        }
+
+        public async Task<Result<IEnumerable<PackingListDto>>> GetPackingTemplatesAsync(string? category = null)
+        {
+            var templates = await _packingRepo.GetTemplatesAsync(category);
+            return Result<IEnumerable<PackingListDto>>.Success(templates.Select(t => t.Adapt<PackingListDto>()));
+        }
+
+        public async Task<Result<PackingListDto>> CreatePackingListFromTemplateAsync(Guid tripId, Guid templateId, Guid userId)
+        {
+            if (!await HasAccessAsync(tripId, userId))
+                return Result<PackingListDto>.Failure("Trip not found or access denied.");
+
+            var template = await _packingRepo.GetByIdAsync(templateId);
+            if (template == null || !template.IsTemplate)
+                return Result<PackingListDto>.Failure("Template not found.");
+
+            try
             {
-                _context.PackingItems.Remove(item);
-                await _context.SaveChangesAsync();
+                var newList = new PackingList(tripId, template.Title, template.Category);
+                foreach (var item in template.Items)
+                {
+                    newList.AddItem(item.Name, item.Quantity);
+                }
+
+                await _packingRepo.AddAsync(newList);
+                return Result<PackingListDto>.Success(newList.Adapt<PackingListDto>());
+            }
+            catch (ArgumentException ex)
+            {
+                return Result<PackingListDto>.Failure(ex.Message);
             }
         }
 
         // Checklist
-        public async Task<IEnumerable<ChecklistDto>> GetChecklistsAsync(Guid tripId)
+        public async Task<Result<IEnumerable<ChecklistDto>>> GetChecklistsAsync(Guid tripId, Guid userId)
         {
+            if (!await HasAccessAsync(tripId, userId))
+                return Result<IEnumerable<ChecklistDto>>.Failure("Trip not found or access denied.");
+
             var lists = await _checklistRepo.GetByTripIdAsync(tripId);
-            return lists.Select(l => MapChecklistToDto(l));
+            return Result<IEnumerable<ChecklistDto>>.Success(lists.Select(l => l.Adapt<ChecklistDto>()));
         }
 
-        public async Task<ChecklistDto> CreateChecklistAsync(Guid tripId, CreateChecklistRequest request)
+        public async Task<Result<ChecklistDto>> CreateChecklistAsync(Guid tripId, CreateChecklistRequest request, Guid userId)
         {
-            var checklist = new TravelChecklist
+            if (!await HasAccessAsync(tripId, userId))
+                return Result<ChecklistDto>.Failure("Trip not found or access denied.");
+
+            try
             {
-                Id = Guid.NewGuid(),
-                TripId = tripId,
-                Title = request.Title,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
-            await _checklistRepo.AddAsync(checklist);
-            return MapChecklistToDto(checklist);
+                var checklist = new TravelChecklist(tripId, request.Title);
+                await _checklistRepo.AddAsync(checklist);
+                return Result<ChecklistDto>.Success(checklist.Adapt<ChecklistDto>());
+            }
+            catch (ArgumentException ex)
+            {
+                return Result<ChecklistDto>.Failure(ex.Message);
+            }
         }
 
-        public async Task<ChecklistDto> AddChecklistItemAsync(Guid checklistId, AddChecklistItemRequest request)
+        public async Task<Result<ChecklistDto>> AddChecklistItemAsync(Guid checklistId, AddChecklistItemRequest request, Guid userId)
         {
             var checklist = await _checklistRepo.GetByIdAsync(checklistId);
-            if (checklist == null) return null;
+            if (checklist == null || !await HasAccessAsync(checklist.TripId, userId))
+                return Result<ChecklistDto>.Failure("Checklist not found or access denied.");
 
-            var item = new ChecklistItem
+            try
             {
-                Id = Guid.NewGuid(),
-                ChecklistId = checklistId,
-                Task = request.Task,
-                DueDate = request.DueDate,
-                IsCompleted = false
-            };
-            
-            // Add directly to DbContext
-            await _context.ChecklistItems.AddAsync(item);
-            await _context.SaveChangesAsync();
-
-            // Refresh checklist
-            var updatedChecklist = await _checklistRepo.GetByIdAsync(checklistId);
-            return MapChecklistToDto(updatedChecklist);
-        }
-
-        public async Task UpdateChecklistItemAsync(Guid itemId, bool isCompleted)
-        {
-            var item = await _context.ChecklistItems.FindAsync(itemId);
-            if (item != null)
+                checklist.AddItem(request.Task, request.DueDate);
+                await _checklistRepo.UpdateAsync(checklist);
+                return Result<ChecklistDto>.Success(checklist.Adapt<ChecklistDto>());
+            }
+            catch (ArgumentException ex)
             {
-                item.IsCompleted = isCompleted;
-                await _context.SaveChangesAsync();
+                return Result<ChecklistDto>.Failure(ex.Message);
             }
         }
 
-        public async Task DeleteChecklistAsync(Guid checklistId)
+        public async Task<Result> UpdateChecklistItemAsync(Guid itemId, bool isCompleted, Guid userId)
+        {
+            var item = await _context.ChecklistItems.FindAsync(itemId);
+            if (item == null) return Result.Failure("Checklist item not found.");
+
+            var checklist = await _checklistRepo.GetByIdAsync(item.ChecklistId);
+            if (checklist == null || !await HasAccessAsync(checklist.TripId, userId))
+                return Result.Failure("Access denied.");
+
+            item.SetCompletedStatus(isCompleted);
+            await _context.SaveChangesAsync();
+            return Result.Success();
+        }
+
+        public async Task<Result> DeleteChecklistAsync(Guid checklistId, Guid userId)
         {
             var list = await _checklistRepo.GetByIdAsync(checklistId);
-            if (list != null) await _checklistRepo.DeleteAsync(list);
+            if (list == null || !await HasAccessAsync(list.TripId, userId))
+                return Result.Failure("Checklist not found or access denied.");
+
+            await _checklistRepo.DeleteAsync(list);
+            return Result.Success();
         }
 
-        public async Task DeleteChecklistItemAsync(Guid itemId)
+        public async Task<Result> DeleteChecklistItemAsync(Guid itemId, Guid userId)
         {
             var item = await _context.ChecklistItems.FindAsync(itemId);
-            if (item != null)
-            {
-                _context.ChecklistItems.Remove(item);
-                await _context.SaveChangesAsync();
-            }
+            if (item == null) return Result.Failure("Checklist item not found.");
+
+            var checklist = await _checklistRepo.GetByIdAsync(item.ChecklistId);
+            if (checklist == null || !await HasAccessAsync(checklist.TripId, userId))
+                return Result.Failure("Access denied.");
+
+            _context.ChecklistItems.Remove(item);
+            await _context.SaveChangesAsync();
+            return Result.Success();
         }
 
         // Emergency Contacts
-        public async Task<IEnumerable<EmergencyContactDto>> GetEmergencyContactsAsync(Guid tripId)
+        public async Task<Result<IEnumerable<EmergencyContactDto>>> GetEmergencyContactsAsync(Guid tripId, Guid userId)
         {
+            if (!await HasAccessAsync(tripId, userId))
+                return Result<IEnumerable<EmergencyContactDto>>.Failure("Trip not found or access denied.");
+
             var contacts = await _contactRepo.GetByTripIdAsync(tripId);
-            return contacts.Select(c => MapContactToDto(c));
+            return Result<IEnumerable<EmergencyContactDto>>.Success(contacts.Select(c => c.Adapt<EmergencyContactDto>()));
         }
 
-        public async Task<EmergencyContactDto> CreateEmergencyContactAsync(Guid tripId, CreateEmergencyContactRequest request)
+        public async Task<Result<EmergencyContactDto>> CreateEmergencyContactAsync(Guid tripId, CreateEmergencyContactRequest request, Guid userId)
         {
-            var contact = new EmergencyContact
-            {
-                Id = Guid.NewGuid(),
-                TripId = tripId,
-                Name = request.Name,
-                Relationship = request.Relationship,
-                PhoneNumber = request.PhoneNumber,
-                Email = request.Email,
-                IsLocal = request.IsLocal,
-                Notes = request.Notes,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
-            await _contactRepo.AddAsync(contact);
-            return MapContactToDto(contact);
-        }
+            if (!await HasAccessAsync(tripId, userId))
+                return Result<EmergencyContactDto>.Failure("Trip not found or access denied.");
 
-        public async Task UpdateEmergencyContactAsync(Guid id, CreateEmergencyContactRequest request)
-        {
-            var contact = await _contactRepo.GetByIdAsync(id);
-            if (contact != null)
+            try
             {
-                contact.Name = request.Name;
-                contact.Relationship = request.Relationship;
-                contact.PhoneNumber = request.PhoneNumber;
-                contact.Email = request.Email;
-                contact.IsLocal = request.IsLocal;
-                contact.Notes = request.Notes;
-                contact.UpdatedAt = DateTime.UtcNow;
-                await _contactRepo.UpdateAsync(contact);
+                var contact = new EmergencyContact(
+                    tripId,
+                    request.Name,
+                    request.Relationship,
+                    request.PhoneNumber,
+                    request.Email,
+                    request.IsLocal,
+                    request.Notes);
+
+                await _contactRepo.AddAsync(contact);
+                return Result<EmergencyContactDto>.Success(contact.Adapt<EmergencyContactDto>());
+            }
+            catch (ArgumentException ex)
+            {
+                return Result<EmergencyContactDto>.Failure(ex.Message);
             }
         }
 
-        public async Task DeleteEmergencyContactAsync(Guid id)
+        public async Task<Result> UpdateEmergencyContactAsync(Guid id, CreateEmergencyContactRequest request, Guid userId)
         {
             var contact = await _contactRepo.GetByIdAsync(id);
-            if (contact != null) await _contactRepo.DeleteAsync(contact);
+            if (contact == null || !await HasAccessAsync(contact.TripId, userId))
+                return Result.Failure("Emergency contact not found or access denied.");
+
+            try
+            {
+                contact.UpdateDetails(
+                    request.Name,
+                    request.Relationship,
+                    request.PhoneNumber,
+                    request.Email,
+                    request.IsLocal,
+                    request.Notes);
+
+                await _contactRepo.UpdateAsync(contact);
+                return Result.Success();
+            }
+            catch (ArgumentException ex)
+            {
+                return Result.Failure(ex.Message);
+            }
+        }
+
+        public async Task<Result> DeleteEmergencyContactAsync(Guid id, Guid userId)
+        {
+            var contact = await _contactRepo.GetByIdAsync(id);
+            if (contact == null || !await HasAccessAsync(contact.TripId, userId))
+                return Result.Failure("Emergency contact not found or access denied.");
+
+            await _contactRepo.DeleteAsync(contact);
+            return Result.Success();
         }
 
         // Travel Documents
-        public async Task<IEnumerable<TravelDocumentDto>> GetTravelDocumentsAsync(Guid tripId)
+        public async Task<Result<IEnumerable<TravelDocumentDto>>> GetTravelDocumentsAsync(Guid tripId, Guid userId)
         {
+            if (!await HasAccessAsync(tripId, userId))
+                return Result<IEnumerable<TravelDocumentDto>>.Failure("Trip not found or access denied.");
+
             var docs = await _docRepo.GetByTripIdAsync(tripId);
-            return docs.Select(d => MapDocToDto(d));
+            return Result<IEnumerable<TravelDocumentDto>>.Success(docs.Select(d => d.Adapt<TravelDocumentDto>()));
         }
 
-        public async Task<TravelDocumentDto> UploadDocumentAsync(Guid tripId, string title, TravelDocumentType type, string fileName, string contentType, long fileSize, byte[] fileData)
+        public async Task<Result<TravelDocumentDto>> UploadDocumentAsync(Guid tripId, string title, TravelDocumentType type, string fileName, string contentType, long fileSize, byte[] fileData, Guid userId)
         {
-            var filePath = await _fileStorage.SaveFileFromBytesAsync(fileData, fileName, contentType, fileSize, "travel-documents");
-            var doc = new TravelDocument
+            if (!await HasAccessAsync(tripId, userId))
+                return Result<TravelDocumentDto>.Failure("Trip not found or access denied.");
+
+            try
             {
-                Id = Guid.NewGuid(),
-                TripId = tripId,
-                Title = title,
-                Type = type,
-                FileName = fileName,
-                FilePath = filePath,
-                ContentType = contentType,
-                FileSize = fileSize,
-                UploadDate = DateTime.UtcNow
-            };
-            await _docRepo.AddAsync(doc);
-            return MapDocToDto(doc);
+                var filePath = await _fileStorage.SaveFileFromBytesAsync(fileData, fileName, contentType, fileSize, "travel-documents");
+                var doc = new TravelDocument(tripId, title, type, fileName, filePath, contentType, fileSize);
+                await _docRepo.AddAsync(doc);
+                return Result<TravelDocumentDto>.Success(doc.Adapt<TravelDocumentDto>());
+            }
+            catch (ArgumentException ex)
+            {
+                return Result<TravelDocumentDto>.Failure(ex.Message);
+            }
         }
 
-        public async Task<(byte[] fileData, string contentType, string fileName)> DownloadDocumentAsync(Guid id)
+        public async Task<Result<(byte[] fileData, string contentType, string fileName)>> DownloadDocumentAsync(Guid id, Guid userId)
         {
             var doc = await _docRepo.GetByIdAsync(id);
-            if (doc == null) return (null, null, null);
+            if (doc == null || !await HasAccessAsync(doc.TripId, userId))
+                return Result<(byte[] fileData, string contentType, string fileName)>.Failure("Document not found or access denied.");
 
             var fileData = await _fileStorage.GetFileAsync(doc.FilePath);
-            return (fileData, doc.ContentType, doc.FileName);
+            return Result<(byte[] fileData, string contentType, string fileName)>.Success((fileData, doc.ContentType, doc.FileName));
         }
 
-        public async Task DeleteDocumentAsync(Guid id)
+        public async Task<Result> DeleteDocumentAsync(Guid id, Guid userId)
         {
             var doc = await _docRepo.GetByIdAsync(id);
-            if (doc != null)
-            {
-                await _fileStorage.DeleteFileAsync(doc.FilePath);
-                await _docRepo.DeleteAsync(doc);
-            }
+            if (doc == null || !await HasAccessAsync(doc.TripId, userId))
+                return Result.Failure("Document not found or access denied.");
+
+            await _fileStorage.DeleteFileAsync(doc.FilePath);
+            await _docRepo.DeleteAsync(doc);
+            return Result.Success();
         }
 
         // Local Information
-        public async Task<IEnumerable<LocalInfoNoteDto>> GetLocalInfoNotesAsync(Guid tripId)
+        public async Task<Result<IEnumerable<LocalInfoNoteDto>>> GetLocalInfoNotesAsync(Guid tripId, Guid userId)
         {
+            if (!await HasAccessAsync(tripId, userId))
+                return Result<IEnumerable<LocalInfoNoteDto>>.Failure("Trip not found or access denied.");
+
             var notes = await _infoRepo.GetByTripIdAsync(tripId);
-            return notes.Select(n => MapNoteToDto(n));
+            return Result<IEnumerable<LocalInfoNoteDto>>.Success(notes.Select(n => n.Adapt<LocalInfoNoteDto>()));
         }
 
-        public async Task<LocalInfoNoteDto> CreateLocalInfoNoteAsync(Guid tripId, CreateLocalInfoNoteRequest request)
+        public async Task<Result<LocalInfoNoteDto>> CreateLocalInfoNoteAsync(Guid tripId, CreateLocalInfoNoteRequest request, Guid userId)
         {
-            var note = new LocalInfoNote
-            {
-                Id = Guid.NewGuid(),
-                TripId = tripId,
-                Title = request.Title,
-                Category = request.Category,
-                Content = request.Content,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
-            await _infoRepo.AddAsync(note);
-            return MapNoteToDto(note);
-        }
+            if (!await HasAccessAsync(tripId, userId))
+                return Result<LocalInfoNoteDto>.Failure("Trip not found or access denied.");
 
-        public async Task UpdateLocalInfoNoteAsync(Guid id, CreateLocalInfoNoteRequest request)
-        {
-            var note = await _infoRepo.GetByIdAsync(id);
-            if (note != null)
+            try
             {
-                note.Title = request.Title;
-                note.Category = request.Category;
-                note.Content = request.Content;
-                note.UpdatedAt = DateTime.UtcNow;
-                await _infoRepo.UpdateAsync(note);
+                var note = new LocalInfoNote(tripId, request.Title, request.Category, request.Content);
+                await _infoRepo.AddAsync(note);
+                return Result<LocalInfoNoteDto>.Success(note.Adapt<LocalInfoNoteDto>());
+            }
+            catch (ArgumentException ex)
+            {
+                return Result<LocalInfoNoteDto>.Failure(ex.Message);
             }
         }
 
-        public async Task DeleteLocalInfoNoteAsync(Guid id)
+        public async Task<Result> UpdateLocalInfoNoteAsync(Guid id, CreateLocalInfoNoteRequest request, Guid userId)
         {
             var note = await _infoRepo.GetByIdAsync(id);
-            if (note != null) await _infoRepo.DeleteAsync(note);
+            if (note == null || !await HasAccessAsync(note.TripId, userId))
+                return Result.Failure("Note not found or access denied.");
+
+            try
+            {
+                note.UpdateDetails(request.Title, request.Category, request.Content);
+                await _infoRepo.UpdateAsync(note);
+                return Result.Success();
+            }
+            catch (ArgumentException ex)
+            {
+                return Result.Failure(ex.Message);
+            }
         }
 
-        // Mappers
-        private PackingListDto MapPackingListToDto(PackingList list) => new PackingListDto
+        public async Task<Result> DeleteLocalInfoNoteAsync(Guid id, Guid userId)
         {
-            Id = list.Id,
-            TripId = list.TripId,
-            Title = list.Title,
-            Category = list.Category,
-            Items = list.Items.Select(i => new PackingItemDto { Id = i.Id, Name = i.Name, Quantity = i.Quantity, IsPacked = i.IsPacked }).ToList()
-        };
+            var note = await _infoRepo.GetByIdAsync(id);
+            if (note == null || !await HasAccessAsync(note.TripId, userId))
+                return Result.Failure("Note not found or access denied.");
 
-        private ChecklistDto MapChecklistToDto(TravelChecklist list) => new ChecklistDto
-        {
-            Id = list.Id,
-            TripId = list.TripId,
-            Title = list.Title,
-            Items = list.Items.Select(i => new ChecklistItemDto { Id = i.Id, Task = i.Task, IsCompleted = i.IsCompleted, DueDate = i.DueDate }).ToList()
-        };
-
-        private EmergencyContactDto MapContactToDto(EmergencyContact contact) => new EmergencyContactDto
-        {
-            Id = contact.Id,
-            TripId = contact.TripId,
-            Name = contact.Name,
-            Relationship = contact.Relationship,
-            PhoneNumber = contact.PhoneNumber,
-            Email = contact.Email,
-            IsLocal = contact.IsLocal,
-            Notes = contact.Notes
-        };
-
-        private TravelDocumentDto MapDocToDto(TravelDocument doc) => new TravelDocumentDto
-        {
-            Id = doc.Id,
-            TripId = doc.TripId,
-            Title = doc.Title,
-            Type = doc.Type,
-            FileName = doc.FileName,
-            FileSize = doc.FileSize,
-            UploadDate = doc.UploadDate
-        };
-
-        private LocalInfoNoteDto MapNoteToDto(LocalInfoNote note) => new LocalInfoNoteDto
-        {
-            Id = note.Id,
-            TripId = note.TripId,
-            Title = note.Title,
-            Category = note.Category,
-            Content = note.Content
-        };
+            await _infoRepo.DeleteAsync(note);
+            return Result.Success();
+        }
     }
 }

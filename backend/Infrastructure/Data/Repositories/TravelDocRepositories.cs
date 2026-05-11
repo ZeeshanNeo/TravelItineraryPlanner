@@ -16,12 +16,21 @@ namespace Infrastructure.Data.Repositories
         public async Task<IEnumerable<PackingList>> GetByTripIdAsync(Guid tripId) =>
             await _context.PackingLists.Include(p => p.Items).Where(p => p.TripId == tripId).ToListAsync();
 
-        public async Task<PackingList> GetByIdAsync(Guid id) =>
+        public async Task<PackingList?> GetByIdAsync(Guid id) =>
             await _context.PackingLists.Include(p => p.Items).FirstOrDefaultAsync(p => p.Id == id);
 
         public async Task AddAsync(PackingList packingList) { await _context.PackingLists.AddAsync(packingList); await _context.SaveChangesAsync(); }
         public async Task UpdateAsync(PackingList packingList) { _context.PackingLists.Update(packingList); await _context.SaveChangesAsync(); }
         public async Task DeleteAsync(PackingList packingList) { _context.PackingLists.Remove(packingList); await _context.SaveChangesAsync(); }
+
+        public async Task<IEnumerable<PackingList>> GetTemplatesAsync(string? category = null)
+        {
+            var query = _context.PackingLists.Include(p => p.Items).Where(p => p.IsTemplate);
+            if (!string.IsNullOrEmpty(category)) query = query.Where(p => p.TemplateCategory == category);
+            return await query.ToListAsync();
+        }
+
+        public async Task SaveChangesAsync() => await _context.SaveChangesAsync();
     }
 
     public class ChecklistRepository : IChecklistRepository
@@ -32,12 +41,13 @@ namespace Infrastructure.Data.Repositories
         public async Task<IEnumerable<TravelChecklist>> GetByTripIdAsync(Guid tripId) =>
             await _context.TravelChecklists.Include(c => c.Items).Where(c => c.TripId == tripId).ToListAsync();
 
-        public async Task<TravelChecklist> GetByIdAsync(Guid id) =>
+        public async Task<TravelChecklist?> GetByIdAsync(Guid id) =>
             await _context.TravelChecklists.Include(c => c.Items).FirstOrDefaultAsync(c => c.Id == id);
 
         public async Task AddAsync(TravelChecklist checklist) { await _context.TravelChecklists.AddAsync(checklist); await _context.SaveChangesAsync(); }
         public async Task UpdateAsync(TravelChecklist checklist) { _context.TravelChecklists.Update(checklist); await _context.SaveChangesAsync(); }
         public async Task DeleteAsync(TravelChecklist checklist) { _context.TravelChecklists.Remove(checklist); await _context.SaveChangesAsync(); }
+        public async Task SaveChangesAsync() => await _context.SaveChangesAsync();
     }
 
     public class EmergencyContactRepository : IEmergencyContactRepository
@@ -48,10 +58,11 @@ namespace Infrastructure.Data.Repositories
         public async Task<IEnumerable<EmergencyContact>> GetByTripIdAsync(Guid tripId) =>
             await _context.EmergencyContacts.Where(c => c.TripId == tripId).ToListAsync();
 
-        public async Task<EmergencyContact> GetByIdAsync(Guid id) => await _context.EmergencyContacts.FindAsync(id);
+        public async Task<EmergencyContact?> GetByIdAsync(Guid id) => await _context.EmergencyContacts.FindAsync(id);
         public async Task AddAsync(EmergencyContact contact) { await _context.EmergencyContacts.AddAsync(contact); await _context.SaveChangesAsync(); }
         public async Task UpdateAsync(EmergencyContact contact) { _context.EmergencyContacts.Update(contact); await _context.SaveChangesAsync(); }
         public async Task DeleteAsync(EmergencyContact contact) { _context.EmergencyContacts.Remove(contact); await _context.SaveChangesAsync(); }
+        public async Task SaveChangesAsync() => await _context.SaveChangesAsync();
     }
 
     public class TravelDocumentRepository : ITravelDocumentRepository
@@ -62,10 +73,11 @@ namespace Infrastructure.Data.Repositories
         public async Task<IEnumerable<TravelDocument>> GetByTripIdAsync(Guid tripId) =>
             await _context.TravelDocuments.Where(d => d.TripId == tripId).ToListAsync();
 
-        public async Task<TravelDocument> GetByIdAsync(Guid id) => await _context.TravelDocuments.FindAsync(id);
+        public async Task<TravelDocument?> GetByIdAsync(Guid id) => await _context.TravelDocuments.FindAsync(id);
         public async Task AddAsync(TravelDocument document) { await _context.TravelDocuments.AddAsync(document); await _context.SaveChangesAsync(); }
         public async Task UpdateAsync(TravelDocument document) { _context.TravelDocuments.Update(document); await _context.SaveChangesAsync(); }
         public async Task DeleteAsync(TravelDocument document) { _context.TravelDocuments.Remove(document); await _context.SaveChangesAsync(); }
+        public async Task SaveChangesAsync() => await _context.SaveChangesAsync();
     }
 
     public class LocalInfoRepository : ILocalInfoRepository
@@ -76,9 +88,10 @@ namespace Infrastructure.Data.Repositories
         public async Task<IEnumerable<LocalInfoNote>> GetByTripIdAsync(Guid tripId) =>
             await _context.LocalInfoNotes.Where(n => n.TripId == tripId).ToListAsync();
 
-        public async Task<LocalInfoNote> GetByIdAsync(Guid id) => await _context.LocalInfoNotes.FindAsync(id);
+        public async Task<LocalInfoNote?> GetByIdAsync(Guid id) => await _context.LocalInfoNotes.FindAsync(id);
         public async Task AddAsync(LocalInfoNote note) { await _context.LocalInfoNotes.AddAsync(note); await _context.SaveChangesAsync(); }
         public async Task UpdateAsync(LocalInfoNote note) { _context.LocalInfoNotes.Update(note); await _context.SaveChangesAsync(); }
         public async Task DeleteAsync(LocalInfoNote note) { _context.LocalInfoNotes.Remove(note); await _context.SaveChangesAsync(); }
+        public async Task SaveChangesAsync() => await _context.SaveChangesAsync();
     }
 }

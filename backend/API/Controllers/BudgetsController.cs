@@ -1,7 +1,7 @@
 using System;
-using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
+using Application.Common.Interfaces;
 using Application.DTOs.Budget;
 using Application.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -15,43 +15,34 @@ namespace API.Controllers;
 public class BudgetsController : ControllerBase
 {
     private readonly IBudgetService _budgetService;
+    private readonly ICurrentUserService _currentUser;
 
-    public BudgetsController(IBudgetService budgetService)
+    public BudgetsController(IBudgetService budgetService, ICurrentUserService currentUser)
     {
         _budgetService = budgetService;
+        _currentUser = currentUser;
     }
 
-    private Guid GetUserId()
-    {
-        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (Guid.TryParse(userIdString, out var userId))
-        {
-            return userId;
-        }
-        throw new UnauthorizedAccessException("Invalid token.");
-    }
+    private Guid UserId => _currentUser.UserId ?? throw new UnauthorizedAccessException("Invalid token.");
 
     [HttpGet]
     public async Task<ActionResult<TripBudgetResponse>> GetBudget(Guid tripId, CancellationToken cancellationToken)
     {
-        var userId = GetUserId();
-        var response = await _budgetService.GetBudgetAsync(tripId, userId, cancellationToken);
-        return Ok(response);
+        var result = await _budgetService.GetBudgetAsync(tripId, UserId, cancellationToken);
+        return result.IsSuccess ? Ok(result.Value) : NotFound(new { error = result.Error });
     }
 
     [HttpPut]
     public async Task<ActionResult<TripBudgetResponse>> UpdateBudget(Guid tripId, [FromBody] UpdateTripBudgetRequest request, CancellationToken cancellationToken)
     {
-        var userId = GetUserId();
-        var response = await _budgetService.UpdateBudgetAsync(tripId, request, userId, cancellationToken);
-        return Ok(response);
+        var result = await _budgetService.UpdateBudgetAsync(tripId, request, UserId, cancellationToken);
+        return result.IsSuccess ? Ok(result.Value) : BadRequest(new { error = result.Error });
     }
 
     [HttpGet("summary")]
     public async Task<ActionResult<BudgetSummaryResponse>> GetSummary(Guid tripId, CancellationToken cancellationToken)
     {
-        var userId = GetUserId();
-        var response = await _budgetService.GetBudgetSummaryAsync(tripId, userId, cancellationToken);
-        return Ok(response);
+        var result = await _budgetService.GetBudgetSummaryAsync(tripId, UserId, cancellationToken);
+        return result.IsSuccess ? Ok(result.Value) : NotFound(new { error = result.Error });
     }
 }

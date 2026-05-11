@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Application.Common.Models;
 using Application.DTOs.Booking;
 using Application.Services;
 using Domain.Entities;
 using Domain.Interfaces;
+using Mapster;
 
 namespace Infrastructure.Services;
 
@@ -26,14 +28,12 @@ public class BookingDocumentService : IBookingDocumentService
         _fileStorageService = fileStorageService;
     }
 
-    public async Task<BookingDocumentResponse> UploadDocumentAsync(Guid bookingId, FileUploadRequest fileRequest, Guid userId, CancellationToken cancellationToken = default)
+    public async Task<Result<BookingDocumentResponse>> UploadDocumentAsync(Guid bookingId, FileUploadRequest fileRequest, Guid userId, CancellationToken cancellationToken = default)
     {
-        // Validate booking exists and belongs to user
         var booking = await _bookingRepository.GetByIdAndUserIdAsync(bookingId, userId, cancellationToken);
         if (booking == null)
-            throw new KeyNotFoundException("Booking not found or you don't have permission to access it.");
+            return Result<BookingDocumentResponse>.Failure("Booking not found or you don't have permission to access it.");
 
-        // Save file using the file storage service
         var filePath = await _fileStorageService.SaveFileFromBytesAsync(
             fileRequest.Content,
             fileRequest.FileName,
@@ -42,94 +42,88 @@ public class BookingDocumentService : IBookingDocumentService
             $"bookings/{bookingId}",
             cancellationToken);
 
-        // Create document record
-        var document = new BookingDocument
+        try
         {
-            BookingId = bookingId,
-            FileName = fileRequest.FileName,
-            FilePath = filePath,
-            FileSize = fileRequest.FileSize,
-            ContentType = fileRequest.ContentType,
-            UploadedAt = DateTime.UtcNow
-        };
+            var document = new BookingDocument(
+                bookingId,
+                fileRequest.FileName,
+                filePath,
+                fileRequest.FileSize,
+                fileRequest.ContentType
+            );
 
-        await _documentRepository.AddAsync(document, cancellationToken);
-        await _documentRepository.SaveChangesAsync(cancellationToken);
+            await _documentRepository.AddAsync(document, cancellationToken);
+            await _documentRepository.SaveChangesAsync(cancellationToken);
 
-        return MapToResponse(document);
+            var response = document.Adapt<BookingDocumentResponse>();
+            response.DownloadUrl = $"/api/bookings/{bookingId}/documents/{document.Id}/download";
+            return Result<BookingDocumentResponse>.Success(response);
+        }
+        catch (ArgumentException ex)
+        {
+            await _fileStorageService.DeleteFileAsync(filePath, cancellationToken);
+            return Result<BookingDocumentResponse>.Failure(ex.Message);
+        }
     }
 
-    public async Task<IEnumerable<BookingDocumentResponse>> GetDocumentsAsync(Guid bookingId, Guid userId, CancellationToken cancellationToken = default)
+    public async Task<Result<IEnumerable<BookingDocumentResponse>>> GetDocumentsAsync(Guid bookingId, Guid userId, CancellationToken cancellationToken = default)
     {
-        // Validate booking exists and belongs to user
         var booking = await _bookingRepository.GetByIdAndUserIdAsync(bookingId, userId, cancellationToken);
         if (booking == null)
-            throw new KeyNotFoundException("Booking not found or you don't have permission to access it.");
+            return Result<IEnumerable<BookingDocumentResponse>>.Failure("Booking not found or you don't have permission to access it.");
 
         var documents = await _documentRepository.GetByBookingIdAsync(bookingId, userId, cancellationToken);
-        return documents.Select(MapToResponse);
+        return Result<IEnumerable<BookingDocumentResponse>>.Success(documents.Select(d => 
+        {
+            var response = d.Adapt<BookingDocumentResponse>();
+            response.DownloadUrl = $"/api/bookings/{bookingId}/documents/{d.Id}/download";
+            return response;
+        }));
     }
 
-    public async Task<BookingDocumentResponse?> GetDocumentAsync(Guid bookingId, Guid documentId, Guid userId, CancellationToken cancellationToken = default)
+    public async Task<Result<BookingDocumentResponse>> GetDocumentAsync(Guid bookingId, Guid documentId, Guid userId, CancellationToken cancellationToken = default)
     {
-        // Validate booking exists and belongs to user
         var booking = await _bookingRepository.GetByIdAndUserIdAsync(bookingId, userId, cancellationToken);
         if (booking == null)
-            throw new KeyNotFoundException("Booking not found or you don't have permission to access it.");
+            return Result<BookingDocumentResponse>.Failure("Booking not found or you don't have permission to access it.");
 
         var document = await _documentRepository.GetByIdAndUserIdAsync(documentId, userId, cancellationToken);
         if (document == null || document.BookingId != bookingId)
-            return null;
+            return Result<BookingDocumentResponse>.Failure("Document not found or doesn't belong to the booking.");
 
-        return MapToResponse(document);
+        var response = document.Adapt<BookingDocumentResponse>();
+        response.DownloadUrl = $"/api/bookings/{bookingId}/documents/{document.Id}/download";
+        return Result<BookingDocumentResponse>.Success(response);
     }
 
-    public async Task DeleteDocumentAsync(Guid bookingId, Guid documentId, Guid userId, CancellationToken cancellationToken = default)
+    public async Task<Result> DeleteDocumentAsync(Guid bookingId, Guid documentId, Guid userId, CancellationToken cancellationToken = default)
     {
-        // Validate booking exists and belongs to user
         var booking = await _bookingRepository.GetByIdAndUserIdAsync(bookingId, userId, cancellationToken);
         if (booking == null)
-            throw new KeyNotFoundException("Booking not found or you don't have permission to access it.");
+            return Result.Failure("Booking not found or you don't have permission to access it.");
 
         var document = await _documentRepository.GetByIdAndUserIdAsync(documentId, userId, cancellationToken);
         if (document == null || document.BookingId != bookingId)
-            throw new KeyNotFoundException("Document not found or doesn't belong to the booking.");
+            return Result.Failure("Document not found or doesn't belong to the booking.");
 
-        // Delete file from storage
         await _fileStorageService.DeleteFileAsync(document.FilePath, cancellationToken);
-
-        // Delete document record
         await _documentRepository.DeleteAsync(documentId, cancellationToken);
         await _documentRepository.SaveChangesAsync(cancellationToken);
+        
+        return Result.Success();
     }
 
-    public async Task<byte[]> DownloadDocumentAsync(Guid bookingId, Guid documentId, Guid userId, CancellationToken cancellationToken = default)
+    public async Task<Result<byte[]>> DownloadDocumentAsync(Guid bookingId, Guid documentId, Guid userId, CancellationToken cancellationToken = default)
     {
-        // Validate booking exists and belongs to user
         var booking = await _bookingRepository.GetByIdAndUserIdAsync(bookingId, userId, cancellationToken);
         if (booking == null)
-            throw new KeyNotFoundException("Booking not found or you don't have permission to access it.");
+            return Result<byte[]>.Failure("Booking not found or you don't have permission to access it.");
 
         var document = await _documentRepository.GetByIdAndUserIdAsync(documentId, userId, cancellationToken);
         if (document == null || document.BookingId != bookingId)
-            throw new KeyNotFoundException("Document not found or doesn't belong to the booking.");
+            return Result<byte[]>.Failure("Document not found or doesn't belong to the booking.");
 
-        // Get file bytes from storage
-        return await _fileStorageService.GetFileAsync(document.FilePath, cancellationToken);
+        var fileBytes = await _fileStorageService.GetFileAsync(document.FilePath, cancellationToken);
+        return Result<byte[]>.Success(fileBytes);
     }
-
-    private static BookingDocumentResponse MapToResponse(BookingDocument document)
-    {
-        return new BookingDocumentResponse
-        {
-            Id = document.Id,
-            BookingId = document.BookingId,
-            FileName = document.FileName,
-            FilePath = document.FilePath,
-            FileSize = document.FileSize,
-            ContentType = document.ContentType,
-            UploadedAt = document.UploadedAt,
-            DownloadUrl = $"/api/bookings/{document.BookingId}/documents/{document.Id}/download"
-        };
-    }
-}
+}
