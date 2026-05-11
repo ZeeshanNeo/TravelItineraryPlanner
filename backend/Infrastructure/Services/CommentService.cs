@@ -20,15 +20,7 @@ namespace Infrastructure.Services
 
         public async Task<CommentDto> AddCommentAsync(Guid tripId, Guid userId, CreateCommentRequest request)
         {
-            var comment = new Comment
-            {
-                Id = Guid.NewGuid(),
-                TripId = tripId,
-                UserId = userId,
-                ActivityId = request.ActivityId,
-                Text = request.Text,
-                CreatedAt = DateTime.UtcNow
-            };
+            var comment = new Comment(tripId, userId, request.Text, request.ActivityId);
 
             await _commentRepo.AddAsync(comment);
             return MapToDto(comment);

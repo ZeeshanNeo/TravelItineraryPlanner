@@ -5,6 +5,7 @@ import JournalManager from './JournalManager.tsx';
 import TimelineView from './TimelineView.tsx';
 import TripSummary from './TripSummary.tsx';
 import memoryService from '../../services/memory.service';
+import itineraryService from '../../services/itinerary.service';
 import type { MemoryPhoto, JournalEntry, TimelineItem, TripSummary as TripSummaryType } from '../../services/memory.service';
 
 interface MemoryGalleryModuleProps {
@@ -17,6 +18,7 @@ const MemoryGalleryModule: React.FC<MemoryGalleryModuleProps> = ({ tripId }) => 
   const [journals, setJournals] = useState<JournalEntry[]>([]);
   const [timeline, setTimeline] = useState<TimelineItem[]>([]);
   const [summary, setSummary] = useState<TripSummaryType | null>(null);
+  const [activities, setActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -27,16 +29,20 @@ const MemoryGalleryModule: React.FC<MemoryGalleryModuleProps> = ({ tripId }) => 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [photoData, journalData, timelineData, summaryData] = await Promise.all([
+      const [photoData, journalData, timelineData, summaryData, itineraryData] = await Promise.all([
         memoryService.getPhotos(tripId),
         memoryService.getJournals(tripId),
         memoryService.getTimeline(tripId),
-        memoryService.getSummary(tripId)
+        memoryService.getSummary(tripId),
+        itineraryService.getItinerariesByTrip(tripId)
       ]);
       setPhotos(photoData);
       setJournals(journalData);
       setTimeline(timelineData);
       setSummary(summaryData);
+      
+      const allActivities = itineraryData.flatMap(itin => itin.days.flatMap(day => day.activities));
+      setActivities(allActivities);
     } catch (err) {
       console.error('Error fetching memories:', err);
     } finally {
@@ -77,10 +83,10 @@ const MemoryGalleryModule: React.FC<MemoryGalleryModuleProps> = ({ tripId }) => 
 
       <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
         {activeTab === 'photos' && (
-          <PhotoGallery tripId={tripId} photos={photos} onRefresh={() => setRefreshKey(k => k + 1)} />
+          <PhotoGallery tripId={tripId} photos={photos} activities={activities} onRefresh={() => setRefreshKey(k => k + 1)} />
         )}
         {activeTab === 'journals' && (
-          <JournalManager tripId={tripId} journals={journals} onRefresh={() => setRefreshKey(k => k + 1)} />
+          <JournalManager tripId={tripId} journals={journals} activities={activities} onRefresh={() => setRefreshKey(k => k + 1)} />
         )}
         {activeTab === 'timeline' && (
           <TimelineView timeline={timeline} />

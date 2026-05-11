@@ -1,59 +1,49 @@
 # Voyager Pro - User Guide
 
-Welcome to **Voyager Pro**, the ultimate travel itinerary planner for modern explorers and enterprise travel managers. This guide will help you get started with the core features of the application.
+Welcome to **Voyager Pro**, your personal companion for seamless travel planning. Whether you're a solo explorer or a group travel manager, this guide will help you master the application.
 
-## 1. Getting Started
-### Registration & Login
-- Create an account using your email and a secure password.
-- You can also specify travel preferences during registration to personalize your experience.
-- If you forget your password, use the "Forgot Password" link on the login page.
+## 🌟 Key Features
 
-### Your Dashboard
-- The Dashboard is your mission control.
-- View all your upcoming, active, and past trips at a glance.
-- Quick actions allow you to archive or delete trips directly.
+### 1. Your Travel Dashboard
+Your Dashboard is where all your adventures live. View upcoming trips, track active journeys, and revisit past memories at a glance.
 
-## 2. Planning a Trip
-- Click **"Plan New Trip"** to start a journey.
-- Define your destination, travel dates, and travel type (Business, Leisure, Adventure, etc.).
-- Once created, you'll be taken to the Itinerary Detail page.
+### 2. Planning Your Itinerary
+- **Create a Trip**: Set your destination and dates to get started.
+- **Schedule Your Days**: Add activities, sightseeing, and dining spots.
+- **Drag-and-Drop**: Easily reorder your day by dragging activities into your preferred time slots.
+- **Timeline View**: Get a visual "at-a-glance" look at your day's schedule.
 
-## 3. Managing Itineraries
-### Day-by-Day Schedule
-- Organize your trip day-by-day.
-- **Drag and Drop**: Reorder activities simply by dragging them to a new position.
-- **Timeline View**: Switch between "List" and "Timeline" views for a visual representation of your day.
-- **Travel Time**: The system automatically estimates travel time between activities based on your locations.
+### 3. Booking & Document Vault
+- **Keep it Organized**: Store flight numbers, hotel addresses, and transportation details in one place.
+- **The Vault**: Upload your boarding passes, hotel confirmations, and passports so you never have to search through emails at the airport.
 
-### Booking Management
-- Keep all your travel details in one place:
-    - **Flights**: Airline, flight number, times, and terminals.
-    - **Accommodations**: Hotel details, check-in/out times, and booking IDs.
-    - **Transportation**: Car rentals, trains, or local transfers.
-- **Document Vault**: Upload PDFs or images of your tickets and confirmations for offline access.
+### 4. Smart Budgeting
+- **Set a Limit**: Define a total budget for your trip.
+- **Log as You Go**: Quickly enter expenses in any currency while you're on the move.
+- **Insights**: See exactly where your money is going (Food, Transport, Fun) with automatic charts.
 
-## 4. Budget & Expenses
-- Set an overall budget for your trip.
-- Log expenses in real-time as you travel.
-- Categorize spending (Food, Transport, Activities) to see where your money goes.
-- **Charts**: Use the visual breakdown to stay on track.
+### 5. Group Travel & Collaboration
+- **Invite Buddies**: Share your trip with friends via email.
+- **Split the Bill**: Log shared expenses and let Voyager Pro calculate who owes what.
+- **Task List**: Assign planning tasks to your group members (e.g., "Research local restaurants").
 
-## 5. Collaboration & Group Travel
-- **Invite Friends**: Share your trip with travel buddies by email.
-- **Roles**: Assign roles like "Collaborator" (can edit) or "Viewer" (read-only).
-- **Group Chat**: Discuss plans and share updates within the trip.
-- **Shared Expenses**: See who has paid for what and calculate who owes who.
-- **Task Board**: Assign planning tasks (e.g., "Book flights", "Research restaurants") to group members.
+### 6. Photo Gallery & Journal
+- **Capture Memories**: Upload photos directly to your trip timeline.
+- **Journaling**: Write down your thoughts and experiences for each day.
+- **Trip Summary**: Once you're home, enjoy a beautiful chronological summary of your journey.
 
-## 6. Photo Gallery & Memories
-- **Upload Photos**: Capture and store memories from your journey.
-- **Timeline**: View your trip as a chronological timeline of photos and journal entries.
-- **Trip Summary**: Get a visual and statistical summary of your completed trip.
+## 🛠️ Travel Intelligence Tools
 
-## 7. Offline Access (PWA)
-- Voyager Pro is a Progressive Web App.
-- On mobile, you can "Add to Home Screen" to use it like a native app.
-- Critical travel documentation is cached for offline viewing during your travels.
+Voyager Pro provides built-in tools to handle the complexities of international travel:
+
+- **Weather Forecasts**: View the 5-day forecast for your destination directly on your itinerary timeline.
+- **Timezone Calculator**: Compare your current time with your destination and see the specific offset.
+- **Currency Converter**: Log expenses in any local currency and see the converted value in your base currency (USD) instantly.
+- **Packing Templates**: Start your packing list with smart templates for "Beach", "Hiking", "Business", or "City Break".
+
+## 📱 On the Go
+Voyager Pro is designed to work perfectly on your phone. You can access your itinerary and vault documents even when you're in Airplane Mode.
 
 ---
 *Voyager Pro - Travel Smarter.*
+

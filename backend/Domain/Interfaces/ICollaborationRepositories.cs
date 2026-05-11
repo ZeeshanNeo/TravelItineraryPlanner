@@ -13,6 +13,7 @@ namespace Domain.Interfaces
         Task<TripMember> AddAsync(TripMember member);
         Task UpdateAsync(TripMember member);
         Task DeleteAsync(TripMember member);
+        Task SaveChangesAsync();
     }
 
     public interface ICommentRepository
@@ -22,6 +23,7 @@ namespace Domain.Interfaces
         Task<IEnumerable<Comment>> GetByActivityIdAsync(Guid activityId);
         Task<Comment> AddAsync(Comment comment);
         Task DeleteAsync(Comment comment);
+        Task SaveChangesAsync();
     }
 
     public interface ITaskRepository
@@ -31,6 +33,7 @@ namespace Domain.Interfaces
         Task<TripTask> AddAsync(TripTask task);
         Task UpdateAsync(TripTask task);
         Task DeleteAsync(TripTask task);
+        Task SaveChangesAsync();
     }
 
     public interface IExpenseSplitRepository
@@ -40,5 +43,6 @@ namespace Domain.Interfaces
         Task AddRangeAsync(IEnumerable<ExpenseSplit> splits);
         Task UpdateAsync(ExpenseSplit split);
         Task DeleteByExpenseIdAsync(Guid expenseId);
+        Task SaveChangesAsync();
     }
 }

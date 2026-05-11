@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Application.Common.Models;
 using Application.DTOs.Memories;
 using Microsoft.AspNetCore.Http;
 
@@ -9,22 +10,22 @@ namespace Application.Interfaces
     public interface IMemoryService
     {
         // Photos
-        Task<MemoryPhotoDto> UploadPhotoAsync(Guid tripId, IFormFile file, string title, string location, List<string> tags);
-        Task<IEnumerable<MemoryPhotoDto>> GetPhotosByTripAsync(Guid tripId);
-        Task<MemoryPhotoDto> UpdatePhotoAsync(Guid photoId, UpdatePhotoRequest request);
-        Task DeletePhotoAsync(Guid photoId);
+        Task<Result<MemoryPhotoDto>> UploadPhotoAsync(Guid tripId, IFormFile file, string title, string location, List<string> tags, Guid userId, Guid? activityId = null);
+        Task<Result<IEnumerable<MemoryPhotoDto>>> GetPhotosByTripAsync(Guid tripId, Guid userId);
+        Task<Result<MemoryPhotoDto>> UpdatePhotoAsync(Guid photoId, UpdatePhotoRequest request, Guid userId);
+        Task<Result> DeletePhotoAsync(Guid photoId, Guid userId);
         
         // Journals
-        Task<JournalEntryDto> CreateJournalAsync(Guid tripId, CreateJournalRequest request);
-        Task<IEnumerable<JournalEntryDto>> GetJournalsByTripAsync(Guid tripId);
-        Task<JournalEntryDto> UpdateJournalAsync(Guid journalId, CreateJournalRequest request);
-        Task DeleteJournalAsync(Guid journalId);
+        Task<Result<JournalEntryDto>> CreateJournalAsync(Guid tripId, CreateJournalRequest request, Guid userId);
+        Task<Result<IEnumerable<JournalEntryDto>>> GetJournalsByTripAsync(Guid tripId, Guid userId);
+        Task<Result<JournalEntryDto>> UpdateJournalAsync(Guid journalId, CreateJournalRequest request, Guid userId);
+        Task<Result> DeleteJournalAsync(Guid journalId, Guid userId);
 
         // Timeline & Summary
-        Task<IEnumerable<MemoryTimelineItemDto>> GetMemoryTimelineAsync(Guid tripId);
-        Task<TripSummaryDto> GetTripSummaryAsync(Guid tripId);
+        Task<Result<IEnumerable<MemoryTimelineItemDto>>> GetMemoryTimelineAsync(Guid tripId, Guid userId);
+        Task<Result<TripSummaryDto>> GetTripSummaryAsync(Guid tripId, Guid userId);
 
         // Tags
-        Task<IEnumerable<MemoryTagDto>> GetAllTagsAsync();
+        Task<Result<IEnumerable<MemoryTagDto>>> GetAllTagsAsync();
     }
 }

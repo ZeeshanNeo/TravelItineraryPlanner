@@ -97,6 +97,19 @@ public class ItineraryRepository : IItineraryRepository
         }
     }
 
+    public async Task<Itinerary?> GetByShareTokenAsync(string token, CancellationToken cancellationToken = default)
+    {
+        return await _context.Itineraries
+            .Include(i => i.Days)
+            .ThenInclude(d => d.Activities)
+            .Include(i => i.Trip)
+            .FirstOrDefaultAsync(i => 
+                i.ShareToken == token && 
+                i.IsPublic && 
+                (!i.ShareTokenExpiresAt.HasValue || i.ShareTokenExpiresAt > DateTime.UtcNow), 
+                cancellationToken);
+    }
+
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         await _context.SaveChangesAsync(cancellationToken);

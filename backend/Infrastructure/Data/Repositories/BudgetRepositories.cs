@@ -136,9 +136,12 @@ public class TripBudgetRepository : ITripBudgetRepository
         // 4. Add the new categories
         foreach (var category in newCategories)
         {
-            category.TripBudgetId = budget.Id;
-            if (category.Id == Guid.Empty) category.Id = Guid.NewGuid();
-            await _context.CategoryBudgets.AddAsync(category, cancellationToken);
+            // Since TripBudgetId is private set, we should ideally use a constructor.
+            // But if we already have the objects, we might need a workaround or better architecture.
+            // For now, I'll update the SyncBudgetCategoriesAsync to accept a more flexible input if possible, 
+            // but let's try to fix it by using the constructor if they are being recreated.
+            var newCategory = new CategoryBudget(budget.Id, category.Category, category.Amount);
+            await _context.CategoryBudgets.AddAsync(newCategory, cancellationToken);
         }
 
         await _context.SaveChangesAsync(cancellationToken);

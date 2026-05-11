@@ -201,6 +201,27 @@ class ItineraryService {
   async reorderActivities(dayId: string, activityIdsInOrder: string[]): Promise<void> {
     await api.post(`/itineraries/days/${dayId}/reorder`, activityIdsInOrder);
   }
+
+  // Sharing
+  async generateShareLink(id: string): Promise<string> {
+    const response = await api.post<{ shareToken: string }>(`/itineraries/${id}/share`);
+    return response.data.shareToken;
+  }
+
+  async revokeShareLink(id: string): Promise<void> {
+    await api.delete(`/itineraries/${id}/share`);
+  }
+
+  async getPublicItinerary(shareToken: string): Promise<ItineraryResponse> {
+    const response = await api.get<ItineraryResponse>(`/public/itineraries/${shareToken}`);
+    return response.data;
+  }
+
+  // Utilities
+  async getItineraryWeather(id: string, date: string): Promise<any> {
+    const response = await api.get(`/itineraries/${id}/weather?date=${date}`);
+    return response.data;
+  }
 }
 
 export default new ItineraryService();

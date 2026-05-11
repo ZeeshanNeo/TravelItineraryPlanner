@@ -4,7 +4,7 @@ import Layout from '../components/layout/Layout';
 import { 
   Calendar, MapPin, Clock, ArrowLeft, 
   Star, Share2, List, CreditCard, FileText, Camera as CameraIcon, Users,
-  Settings, Download, Sparkles
+  Settings, Download, Sparkles, X
 } from 'lucide-react';
 import Button from '../components/shared/Button';
 import { tripService } from '../services/trip.service';
@@ -30,6 +30,9 @@ const ItineraryDetail: React.FC = () => {
   const [editingActivity, setEditingActivity] = useState<ActivityResponse | null>(null);
   const [activitySaving, setActivitySaving] = useState(false);
   const [activityError, setActivityError] = useState<string | null>(null);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [shareToken, setShareToken] = useState<string | null>(null);
+  const [weather, setWeather] = useState<any>(null);
   const [activityForm, setActivityForm] = useState({
     title: '',
     description: '',
@@ -80,6 +83,49 @@ const ItineraryDetail: React.FC = () => {
     }
   };
 
+  const activeItinerary = itineraries[0];
+  const scheduleDays = activeItinerary?.days || [];
+  const currentDayData = scheduleDays.find((d: ItineraryDayResponse) => d.dayNumber === activeDay);
+
+  const fetchWeather = async () => {
+    if (!activeItinerary || !currentDayData) return;
+    try {
+      const data = await itineraryService.getItineraryWeather(activeItinerary.id, currentDayData.date);
+      setWeather(data);
+    } catch (err) {
+      console.error('Failed to fetch weather:', err);
+      setWeather(null);
+    }
+  };
+
+  useEffect(() => {
+    if (activeItinerary && currentDayData && activeTab === 'schedule') {
+      fetchWeather();
+    }
+  }, [activeDay, activeTab, activeItinerary]);
+
+  const handleGenerateShare = async () => {
+    if (!activeItinerary) return;
+    try {
+      const token = await itineraryService.generateShareLink(activeItinerary.id);
+      setShareToken(token);
+      setShareModalOpen(true);
+    } catch (err) {
+      console.error('Failed to generate share link:', err);
+    }
+  };
+
+  const handleRevokeShare = async () => {
+    if (!activeItinerary) return;
+    try {
+      await itineraryService.revokeShareLink(activeItinerary.id);
+      setShareToken(null);
+      alert('Sharing revoked successfully.');
+    } catch (err) {
+      console.error('Failed to revoke share link:', err);
+    }
+  };
+
   const refreshItineraries = async () => {
     if (!id) return;
     const itineraryData = await itineraryService.getItinerariesByTrip(id);
@@ -119,10 +165,6 @@ const ItineraryDetail: React.FC = () => {
   if (loading) return <Layout><div className="flex justify-center p-20 animate-pulse text-primary font-bold">Initializing journey...</div></Layout>;
   if (!trip) return <Layout><div className="p-20 text-center text-muted-foreground font-bold">Journey details not found</div></Layout>;
 
-  const activeItinerary = itineraries[0];
-  const scheduleDays = activeItinerary?.days || [];
-  const currentDayData = scheduleDays.find((d: ItineraryDayResponse) => d.dayNumber === activeDay);
-
   const toTimeInput = (value: string) => {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return '09:00';
@@ -145,6 +187,8 @@ const ItineraryDetail: React.FC = () => {
         return;
       }
     }
+    
+    // Reset form state
     setEditingActivity(null);
     setActivityError(null);
     setActivityForm({
@@ -266,16 +310,19 @@ const ItineraryDetail: React.FC = () => {
                      </div>
                   </div>
                </div>
-               
-               <div className="flex items-center gap-4">
-                  <button className="h-16 px-8 bg-white/10 hover:bg-white/20 backdrop-blur-xl border border-white/20 text-white rounded-2xl flex items-center gap-3 transition-all active:scale-95 group">
+                               <div className="flex items-center gap-4">
+                  <button 
+                    onClick={handleGenerateShare}
+                    className="h-16 px-8 bg-white/10 hover:bg-white/20 backdrop-blur-xl border border-white/20 text-white rounded-2xl flex items-center gap-3 transition-all active:scale-95 group"
+                  >
                      <Share2 size={20} className="group-hover:rotate-12 transition-transform" />
-                     <span className="text-[10px] font-black uppercase tracking-widest">Collaborate</span>
+                     <span className="text-[10px] font-black uppercase tracking-widest">Share Project</span>
                   </button>
                   <button className="h-16 w-16 bg-primary hover:bg-primary/90 text-white rounded-2xl flex items-center justify-center shadow-2xl shadow-primary/40 transition-all active:scale-95">
                      <Settings size={24} />
                   </button>
                </div>
+
             </div>
           </div>
         </div>
@@ -417,15 +464,41 @@ const ItineraryDetail: React.FC = () => {
 
                   {/* Quick Actions */}
                   <div className="grid grid-cols-2 gap-4">
-                     <button className="p-6 bg-slate-900 rounded-[2rem] text-white flex flex-col gap-3 hover:bg-black transition-all">
+                     <button 
+                        onClick={handleGenerateShare}
+                        className="p-6 bg-slate-900 rounded-[2rem] text-white flex flex-col gap-3 hover:bg-black transition-all"
+                     >
                         <Share2 size={24} className="text-primary" />
                         <span className="text-[10px] font-black uppercase tracking-widest">Share Project</span>
                      </button>
-                     <button className="p-6 bg-card border border-border rounded-[2rem] text-foreground flex flex-col gap-3 hover:bg-muted transition-all shadow-sm">
+                     <button 
+                        onClick={() => window.print()}
+                        className="p-6 bg-card border border-border rounded-[2rem] text-foreground flex flex-col gap-3 hover:bg-muted transition-all shadow-sm"
+                     >
                         <Download size={24} className="text-muted-foreground" />
                         <span className="text-[10px] font-black uppercase tracking-widest">Export PDF</span>
                      </button>
                   </div>
+
+                  {/* Weather Intelligence */}
+                  {weather && (
+                    <div className="premium-glass bg-gradient-to-br from-blue-500/10 to-indigo-500/10 p-8 rounded-[3rem] border border-blue-500/20">
+                      <div className="flex justify-between items-start mb-6">
+                        <div>
+                          <h4 className="font-black text-foreground text-lg mb-1">Local Forecast</h4>
+                          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{currentDayData?.date ? new Date(currentDayData.date).toLocaleDateString() : ''}</p>
+                        </div>
+                        <div className="text-3xl font-black text-primary">{Math.round(weather.temperature)}°C</div>
+                      </div>
+                      <div className="flex items-center gap-4 bg-white/50 dark:bg-slate-900/50 p-4 rounded-2xl">
+                        <img src={`https://openweathermap.org/img/wn/${weather.icon}@2x.png`} alt={weather.description} className="w-12 h-12" />
+                        <div>
+                          <p className="text-sm font-bold text-foreground capitalize">{weather.description}</p>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Humidity: {weather.humidity}%</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
@@ -579,6 +652,53 @@ const ItineraryDetail: React.FC = () => {
               </Button>
             </div>
           </form>
+        </div>
+      )}
+
+      {shareModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg bg-card rounded-[2.5rem] shadow-2xl border border-border p-10 animate-fade-in-up">
+            <div className="flex justify-between items-start mb-8">
+              <div>
+                <h2 className="text-3xl font-black text-foreground tracking-tight">Share Journey</h2>
+                <p className="text-sm text-muted-foreground font-bold mt-2">Generate a public link to share your itinerary.</p>
+              </div>
+              <button onClick={() => setShareModalOpen(false)} className="text-muted-foreground hover:text-foreground"><X size={24} /></button>
+            </div>
+
+            <div className="space-y-6">
+              <div className="p-6 bg-muted rounded-2xl border border-border">
+                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-3">Public Access Token</p>
+                <div className="flex items-center gap-3">
+                  <input 
+                    readOnly 
+                    value={shareToken ? `${window.location.origin}/public/itinerary/${shareToken}` : 'No active link'} 
+                    className="flex-1 bg-transparent border-none outline-none font-bold text-sm text-foreground"
+                  />
+                  {shareToken && (
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/public/itinerary/${shareToken}`);
+                        alert('Link copied to clipboard!');
+                      }}
+                      className="p-2 bg-primary text-white rounded-xl"
+                    >
+                      <Share2 size={16} />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                {!shareToken ? (
+                  <Button onClick={handleGenerateShare} variant="primary" className="h-14 rounded-2xl font-black uppercase tracking-widest text-xs">Generate Public Link</Button>
+                ) : (
+                  <Button onClick={handleRevokeShare} variant="outline" className="h-14 rounded-2xl font-black uppercase tracking-widest text-xs border-red-200 text-red-500 hover:bg-red-50">Revoke Access</Button>
+                )}
+                <Button onClick={() => setShareModalOpen(false)} variant="outline" className="h-14 rounded-2xl font-black uppercase tracking-widest text-xs">Close</Button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </Layout>

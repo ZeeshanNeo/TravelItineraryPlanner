@@ -43,6 +43,8 @@ namespace Infrastructure.Data.Repositories
             _context.TripMembers.Remove(member);
             await _context.SaveChangesAsync();
         }
+
+        public async Task SaveChangesAsync() => await _context.SaveChangesAsync();
     }
 
     public class CommentRepository : ICommentRepository
@@ -78,6 +80,8 @@ namespace Infrastructure.Data.Repositories
             _context.Comments.Remove(comment);
             await _context.SaveChangesAsync();
         }
+
+        public async Task SaveChangesAsync() => await _context.SaveChangesAsync();
     }
 
     public class TaskRepository : ITaskRepository
@@ -112,6 +116,8 @@ namespace Infrastructure.Data.Repositories
             _context.TripTasks.Remove(task);
             await _context.SaveChangesAsync();
         }
+
+        public async Task SaveChangesAsync() => await _context.SaveChangesAsync();
     }
 
     public class ExpenseSplitRepository : IExpenseSplitRepository
@@ -149,5 +155,7 @@ namespace Infrastructure.Data.Repositories
             _context.ExpenseSplits.RemoveRange(splits);
             await _context.SaveChangesAsync();
         }
+
+        public async Task SaveChangesAsync() => await _context.SaveChangesAsync();
     }
 }

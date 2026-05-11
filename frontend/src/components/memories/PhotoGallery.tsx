@@ -9,16 +9,18 @@ interface PhotoGalleryProps {
   tripId: string;
   photos: MemoryPhoto[];
   onRefresh: () => void;
+  activities?: any[];
 }
 
-const PhotoGallery: React.FC<PhotoGalleryProps> = ({ tripId, photos, onRefresh }) => {
+const PhotoGallery: React.FC<PhotoGalleryProps> = ({ tripId, photos, onRefresh, activities }) => {
   const isSmallScreen = useIsSmallScreen();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadData, setUploadData] = useState({
     file: null as File | null,
     title: '',
     location: '',
-    tags: ''
+    tags: '',
+    activityId: ''
   });
 
   const handleUpload = async (e: React.FormEvent) => {
@@ -32,10 +34,13 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ tripId, photos, onRefresh }
     
     const tagList = uploadData.tags.split(',').map(t => t.trim()).filter(t => t);
     tagList.forEach(t => formData.append('tags', t));
+    if (uploadData.activityId) {
+      formData.append('activityId', uploadData.activityId);
+    }
 
     try {
       await memoryService.uploadPhoto(tripId, formData);
-      setUploadData({ file: null, title: '', location: '', tags: '' });
+      setUploadData({ file: null, title: '', location: '', tags: '', activityId: '' });
       setIsUploading(false);
       onRefresh();
     } catch (err) {
@@ -118,6 +123,22 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ tripId, photos, onRefresh }
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
               />
 
+              {activities && activities.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Link to Activity</p>
+                  <select
+                    value={uploadData.activityId}
+                    onChange={(e) => setUploadData({ ...uploadData, activityId: e.target.value })}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                  >
+                    <option value="">No specific activity</option>
+                    {activities.map((act: any) => (
+                      <option key={act.id} value={act.id}>{act.title}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"
@@ -156,7 +177,7 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ tripId, photos, onRefresh }
                   <span className="truncate">{photo.location}</span>
                 </div>
                 <div className="flex flex-wrap gap-1.5 overflow-hidden max-h-12 md:max-h-none">
-                  {photo.tags.map(tag => (
+                  {photo.tags.map((tag: any) => (
                     <span key={tag.id} className="px-2 py-0.5 bg-white/10 backdrop-blur-md rounded-full text-[8px] md:text-[10px] text-white flex items-center gap-1">
                       <Tag size={8} />
                       {tag.name}

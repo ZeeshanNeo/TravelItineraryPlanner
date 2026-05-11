@@ -132,6 +132,20 @@ const travelDocService = {
   deleteChecklistItem: async (itemId: string): Promise<void> => {
     await api.delete(`/TravelDocs/checklist-items/${itemId}`);
   },
+  autoGenerateChecklist: async (tripId: string): Promise<Checklist> => {
+    const response = await api.post(`/TravelDocs/trips/${tripId}/checklists/auto-generate`);
+    return response.data;
+  },
+
+  // Packing Templates
+  getPackingTemplates: async (category?: string): Promise<PackingList[]> => {
+    const response = await api.get(`/TravelDocs/packing-templates${category ? `?category=${category}` : ''}`);
+    return response.data;
+  },
+  createPackingListFromTemplate: async (tripId: string, templateId: string): Promise<PackingList> => {
+    const response = await api.post(`/TravelDocs/trips/${tripId}/packing-lists/from-template/${templateId}`);
+    return response.data;
+  },
 
   // Emergency Contacts
   getContacts: async (tripId: string): Promise<EmergencyContact[]> => {

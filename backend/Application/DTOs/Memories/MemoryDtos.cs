@@ -12,6 +12,8 @@ namespace Application.DTOs.Memories
         public string FilePath { get; set; }
         public DateTime TakenAt { get; set; }
         public string Location { get; set; }
+        public DateTime UploadedAt { get; set; }
+        public Guid? ActivityId { get; set; }
         public List<MemoryTagDto> Tags { get; set; } = new List<MemoryTagDto>();
     }
 
@@ -23,6 +25,7 @@ namespace Application.DTOs.Memories
         public string Content { get; set; }
         public DateTime EntryDate { get; set; }
         public string Location { get; set; }
+        public Guid? ActivityId { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 
@@ -56,6 +59,7 @@ namespace Application.DTOs.Memories
         public string Content { get; set; }
         public DateTime EntryDate { get; set; }
         public string Location { get; set; }
+        public Guid? ActivityId { get; set; }
     }
 
     public class UpdatePhotoRequest
@@ -63,5 +67,6 @@ namespace Application.DTOs.Memories
         public string Title { get; set; }
         public string Description { get; set; }
         public string Location { get; set; }
+        public Guid? ActivityId { get; set; }
     }
 }

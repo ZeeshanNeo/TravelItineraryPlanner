@@ -1,6 +1,8 @@
 using System.Text;
 using System.Text.Json.Serialization;
+using API.Middleware;
 using Application.Common.Interfaces;
+using Application.Common.Mappings;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Infrastructure;
@@ -10,6 +12,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Mapster
+MappingConfig.Configure();
 
 // Add services to the container.
 builder.Services.AddControllers()
@@ -53,7 +58,7 @@ builder.Services.AddCors(options =>
 });
 
 // Add FluentValidation
-builder.Services.AddValidatorsFromAssemblyContaining<Application.Common.Interfaces.IPasswordHasher>();
+builder.Services.AddValidatorsFromAssemblyContaining<Application.Common.Interfaces.ICurrentUserService>();
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
@@ -99,12 +104,10 @@ builder.Services.AddAuthentication(options =>
         ClockSkew = TimeSpan.Zero
     };
 
-    // For httpOnly cookie token extraction (optional)
     options.Events = new JwtBearerEvents
     {
         OnMessageReceived = context =>
         {
-            // Try to get token from cookie
             if (context.Request.Cookies.TryGetValue("access_token", out var token))
             {
                 context.Token = token;
@@ -118,40 +121,8 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-app.Use(async (context, next) =>
-{
-    try
-    {
-        await next();
-    }
-    catch (ArgumentException ex)
-    {
-        context.Response.StatusCode = 400;
-        context.Response.ContentType = "application/json";
-        await context.Response.WriteAsJsonAsync(new { error = ex.Message });
-    }
-    catch (KeyNotFoundException ex)
-    {
-        context.Response.StatusCode = 404;
-        context.Response.ContentType = "application/json";
-        await context.Response.WriteAsJsonAsync(new { error = ex.Message });
-    }
-    catch (UnauthorizedAccessException ex)
-    {
-        context.Response.StatusCode = 401;
-        context.Response.ContentType = "application/json";
-        await context.Response.WriteAsJsonAsync(new { error = ex.Message });
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"[GLOBAL ERROR] {ex.Message}");
-        Console.WriteLine(ex.StackTrace);
-        
-        context.Response.StatusCode = 500;
-        context.Response.ContentType = "application/json";
-        await context.Response.WriteAsJsonAsync(new { error = "An internal server error occurred.", details = ex.Message });
-    }
-});
+// Global Exception Handling
+app.UseMiddleware<ExceptionMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -160,11 +131,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// app.UseHttpsRedirection();
-
 app.UseCors("AllowFrontend");
 
-// Serve static files from the uploads directory
 var uploadsPath = Path.Combine(app.Environment.ContentRootPath, "uploads");
 if (!Directory.Exists(uploadsPath))
 {

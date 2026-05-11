@@ -3,7 +3,7 @@ import Layout from '../components/layout/Layout';
 import { 
   FolderOpen, Shield, Phone, Info, ListChecks, 
   Plus, Download, Trash2, FileText,
-  User, Globe, AlertTriangle, Mail
+  User, Globe, AlertTriangle, Mail, Sparkles
 } from 'lucide-react';
 import { tripService } from '../services/trip.service';
 import type { TripResponse } from '../services/trip.service';
@@ -77,6 +77,28 @@ const Vault: React.FC = () => {
       fetchVaultData();
     } catch (error) {
       console.error('Error deleting doc:', error);
+    }
+  };
+
+  const handleAutoGenerateChecklist = async () => {
+    if (!selectedTripId) return;
+    try {
+      await travelDocService.autoGenerateChecklist(selectedTripId);
+      fetchVaultData();
+      alert('Checklist auto-generated based on destination!');
+    } catch (error) {
+      console.error('Error auto-generating checklist:', error);
+    }
+  };
+
+  const handleCreateFromTemplate = async (templateId: string) => {
+    if (!selectedTripId) return;
+    try {
+      await travelDocService.createPackingListFromTemplate(selectedTripId, templateId);
+      fetchVaultData();
+      alert('Packing list created from template!');
+    } catch (error) {
+      console.error('Error creating from template:', error);
     }
   };
 
@@ -257,7 +279,24 @@ const Vault: React.FC = () => {
           {activeTab === 'lists' && (
             <div className="space-y-12">
               <div>
-                <h3 className="text-2xl font-black text-foreground tracking-tight mb-8">Packing Collections</h3>
+                <div className="flex justify-between items-center mb-8">
+                  <h3 className="text-2xl font-black text-foreground tracking-tight">Packing Collections</h3>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        const templateId = window.prompt('Enter Template ID (e.g., Beach, Business, Hiking):');
+                        if (templateId) handleCreateFromTemplate(templateId);
+                      }}
+                      className="h-12 px-6 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border-border"
+                    >
+                      <Sparkles size={16} /> Use Template
+                    </Button>
+                    <Button variant="primary" className="h-12 px-6 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                      <Plus size={16} /> Custom List
+                    </Button>
+                  </div>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {packingLists.map((list) => (
                     <div key={list.id} className="p-8 bg-card rounded-[2.5rem] border border-border shadow-sm">
@@ -287,7 +326,16 @@ const Vault: React.FC = () => {
               </div>
 
               <div>
-                <h3 className="text-2xl font-black text-foreground tracking-tight mb-8">Pre-Travel Checklists</h3>
+                <div className="flex justify-between items-center mb-8">
+                  <h3 className="text-2xl font-black text-foreground tracking-tight">Pre-Travel Checklists</h3>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleAutoGenerateChecklist}
+                    className="h-12 px-6 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border-border text-primary"
+                  >
+                    <Sparkles size={16} /> Auto-Generate
+                  </Button>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {checklists.map((checklist) => (
                     <div key={checklist.id} className="p-8 bg-slate-900 rounded-[2.5rem] text-white">

@@ -1,8 +1,8 @@
 import api from './api';
 
 export const TravelType = {
-  Leisure: 0,
-  Business: 1,
+  Business: 0,
+  Leisure: 1,
   Family: 2,
   Solo: 3
 } as const;

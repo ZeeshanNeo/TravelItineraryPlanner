@@ -68,6 +68,8 @@ namespace Infrastructure.Data.Repositories
                 await _context.SaveChangesAsync();
             }
         }
+
+        public async Task SaveChangesAsync() => await _context.SaveChangesAsync();
     }
 
     public class JournalRepository : IJournalRepository
@@ -106,6 +108,8 @@ namespace Infrastructure.Data.Repositories
             _context.JournalEntries.Remove(entry);
             await _context.SaveChangesAsync();
         }
+
+        public async Task SaveChangesAsync() => await _context.SaveChangesAsync();
     }
 
     public class TagRepository : ITagRepository
@@ -131,5 +135,7 @@ namespace Infrastructure.Data.Repositories
             await _context.SaveChangesAsync();
             return tag;
         }
+
+        public async Task SaveChangesAsync() => await _context.SaveChangesAsync();
     }
 }

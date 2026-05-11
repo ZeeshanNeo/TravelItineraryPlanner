@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Application.Common.Models;
 using Application.DTOs.Memories;
 using Application.Interfaces;
 using Domain.Entities;
 using Domain.Interfaces;
 using Microsoft.AspNetCore.Http;
+using Mapster;
 
 namespace Infrastructure.Services
 {
@@ -33,129 +35,165 @@ namespace Infrastructure.Services
             _tripRepo = tripRepo;
         }
 
-        public async Task<MemoryPhotoDto> UploadPhotoAsync(Guid tripId, IFormFile file, string title, string location, List<string> tags)
+        private async Task<bool> HasAccessAsync(Guid tripId, Guid userId)
         {
-            using var ms = new MemoryStream();
-            await file.CopyToAsync(ms);
-            var fileBytes = ms.ToArray();
+            var trip = await _tripRepo.GetByIdAndUserIdAsync(tripId, userId);
+            return trip != null;
+        }
 
-            var filePath = await _fileStorage.SaveFileFromBytesAsync(fileBytes, file.FileName, file.ContentType, file.Length, "photos");
+        public async Task<Result<MemoryPhotoDto>> UploadPhotoAsync(Guid tripId, IFormFile file, string title, string location, List<string> tags, Guid userId, Guid? activityId = null)
+        {
+            if (!await HasAccessAsync(tripId, userId))
+                return Result<MemoryPhotoDto>.Failure("Trip not found or access denied.");
 
-            var photo = new MemoryPhoto
+            try
             {
-                Id = Guid.NewGuid(),
-                TripId = tripId,
-                Title = title,
-                Description = string.Empty, // Fix: DB constraint prevents NULL
-                FilePath = filePath,
-                ContentType = file.ContentType,
-                FileSize = file.Length,
-                TakenAt = DateTime.UtcNow, // Simplified for now
-                Location = location,
-                UploadedAt = DateTime.UtcNow
-            };
+                using var ms = new MemoryStream();
+                await file.CopyToAsync(ms);
+                var fileBytes = ms.ToArray();
 
-            await _memoryRepo.AddPhotoAsync(photo);
+                var filePath = await _fileStorage.SaveFileFromBytesAsync(fileBytes, file.FileName, file.ContentType, file.Length, "photos");
 
-            if (tags != null)
-            {
-                foreach (var tagName in tags)
+                var photo = new MemoryPhoto(
+                    tripId,
+                    title,
+                    string.Empty,
+                    filePath,
+                    file.ContentType,
+                    file.Length,
+                    DateTime.UtcNow,
+                    location,
+                    activityId);
+
+                await _memoryRepo.AddPhotoAsync(photo);
+
+                if (tags != null)
                 {
-                    var tag = await _tagRepo.GetByNameAsync(tagName);
-                    if (tag == null)
+                    foreach (var tagName in tags)
                     {
-                        tag = await _tagRepo.AddAsync(new MemoryTag 
-                        { 
-                            Id = Guid.NewGuid(), 
-                            Name = tagName,
-                            Category = "General" // Fix: DB constraint prevents NULL
-                        });
+                        var tag = await _tagRepo.GetByNameAsync(tagName);
+                        if (tag == null)
+                        {
+                            // In a real DDD scenario, we might want to manage tags via a Domain Service
+                            tag = new MemoryTag { Id = Guid.NewGuid(), Name = tagName, Category = "General" };
+                            await _tagRepo.AddAsync(tag);
+                        }
+                        await _memoryRepo.AddTagToPhotoAsync(photo.Id, tag.Id);
                     }
-                    await _memoryRepo.AddTagToPhotoAsync(photo.Id, tag.Id);
                 }
-            }
 
-            // Reload photo with tags
-            var updatedPhoto = await _memoryRepo.GetPhotoByIdAsync(photo.Id);
-            return MapPhotoToDto(updatedPhoto);
+                await _memoryRepo.SaveChangesAsync();
+                var updatedPhoto = await _memoryRepo.GetPhotoByIdAsync(photo.Id);
+                return Result<MemoryPhotoDto>.Success(updatedPhoto.Adapt<MemoryPhotoDto>());
+            }
+            catch (Exception ex)
+            {
+                return Result<MemoryPhotoDto>.Failure(ex.Message);
+            }
         }
 
-        public async Task<IEnumerable<MemoryPhotoDto>> GetPhotosByTripAsync(Guid tripId)
+        public async Task<Result<IEnumerable<MemoryPhotoDto>>> GetPhotosByTripAsync(Guid tripId, Guid userId)
         {
+            if (!await HasAccessAsync(tripId, userId))
+                return Result<IEnumerable<MemoryPhotoDto>>.Failure("Trip not found or access denied.");
+
             var photos = await _memoryRepo.GetPhotosByTripIdAsync(tripId);
-            return photos.Select(MapPhotoToDto);
+            return Result<IEnumerable<MemoryPhotoDto>>.Success(photos.Select(p => p.Adapt<MemoryPhotoDto>()));
         }
 
-        public async Task<MemoryPhotoDto> UpdatePhotoAsync(Guid photoId, UpdatePhotoRequest request)
+        public async Task<Result<MemoryPhotoDto>> UpdatePhotoAsync(Guid photoId, UpdatePhotoRequest request, Guid userId)
         {
             var photo = await _memoryRepo.GetPhotoByIdAsync(photoId);
-            if (photo == null) return null;
+            if (photo == null || !await HasAccessAsync(photo.TripId, userId))
+                return Result<MemoryPhotoDto>.Failure("Photo not found or access denied.");
 
-            photo.Title = request.Title;
-            photo.Description = request.Description;
-            photo.Location = request.Location;
-
-            await _memoryRepo.UpdatePhotoAsync(photo);
-            return MapPhotoToDto(photo);
-        }
-
-        public async Task DeletePhotoAsync(Guid photoId)
-        {
-            var photo = await _memoryRepo.GetPhotoByIdAsync(photoId);
-            if (photo != null)
+            try
             {
-                await _fileStorage.DeleteFileAsync(photo.FilePath);
-                await _memoryRepo.DeletePhotoAsync(photo);
+                photo.UpdateDetails(request.Title, request.Description, request.Location);
+                await _memoryRepo.UpdatePhotoAsync(photo);
+                await _memoryRepo.SaveChangesAsync();
+                return Result<MemoryPhotoDto>.Success(photo.Adapt<MemoryPhotoDto>());
+            }
+            catch (ArgumentException ex)
+            {
+                return Result<MemoryPhotoDto>.Failure(ex.Message);
             }
         }
 
-        public async Task<JournalEntryDto> CreateJournalAsync(Guid tripId, CreateJournalRequest request)
+        public async Task<Result> DeletePhotoAsync(Guid photoId, Guid userId)
         {
-            var entry = new JournalEntry
+            var photo = await _memoryRepo.GetPhotoByIdAsync(photoId);
+            if (photo == null || !await HasAccessAsync(photo.TripId, userId))
+                return Result.Failure("Photo not found or access denied.");
+
+            await _fileStorage.DeleteFileAsync(photo.FilePath);
+            await _memoryRepo.DeletePhotoAsync(photo);
+            await _memoryRepo.SaveChangesAsync();
+            return Result.Success();
+        }
+
+        public async Task<Result<JournalEntryDto>> CreateJournalAsync(Guid tripId, CreateJournalRequest request, Guid userId)
+        {
+            if (!await HasAccessAsync(tripId, userId))
+                return Result<JournalEntryDto>.Failure("Trip not found or access denied.");
+
+            try
             {
-                Id = Guid.NewGuid(),
-                TripId = tripId,
-                Title = request.Title,
-                Content = request.Content,
-                EntryDate = request.EntryDate,
-                Location = request.Location,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
-
-            await _journalRepo.AddAsync(entry);
-            return MapJournalToDto(entry);
+                var entry = new JournalEntry(tripId, request.Title, request.Content, request.EntryDate, request.Location, request.ActivityId);
+                await _journalRepo.AddAsync(entry);
+                await _journalRepo.SaveChangesAsync();
+                return Result<JournalEntryDto>.Success(entry.Adapt<JournalEntryDto>());
+            }
+            catch (ArgumentException ex)
+            {
+                return Result<JournalEntryDto>.Failure(ex.Message);
+            }
         }
 
-        public async Task<IEnumerable<JournalEntryDto>> GetJournalsByTripAsync(Guid tripId)
+        public async Task<Result<IEnumerable<JournalEntryDto>>> GetJournalsByTripAsync(Guid tripId, Guid userId)
         {
+            if (!await HasAccessAsync(tripId, userId))
+                return Result<IEnumerable<JournalEntryDto>>.Failure("Trip not found or access denied.");
+
             var journals = await _journalRepo.GetByTripIdAsync(tripId);
-            return journals.Select(MapJournalToDto);
+            return Result<IEnumerable<JournalEntryDto>>.Success(journals.Select(j => j.Adapt<JournalEntryDto>()));
         }
 
-        public async Task<JournalEntryDto> UpdateJournalAsync(Guid journalId, CreateJournalRequest request)
+        public async Task<Result<JournalEntryDto>> UpdateJournalAsync(Guid journalId, CreateJournalRequest request, Guid userId)
         {
             var entry = await _journalRepo.GetByIdAsync(journalId);
-            if (entry == null) return null;
+            if (entry == null || !await HasAccessAsync(entry.TripId, userId))
+                return Result<JournalEntryDto>.Failure("Journal entry not found or access denied.");
 
-            entry.Title = request.Title;
-            entry.Content = request.Content;
-            entry.EntryDate = request.EntryDate;
-            entry.Location = request.Location;
-            entry.UpdatedAt = DateTime.UtcNow;
-
-            await _journalRepo.UpdateAsync(entry);
-            return MapJournalToDto(entry);
+            try
+            {
+                entry.UpdateDetails(request.Title, request.Content, request.EntryDate, request.Location);
+                await _journalRepo.UpdateAsync(entry);
+                await _journalRepo.SaveChangesAsync();
+                return Result<JournalEntryDto>.Success(entry.Adapt<JournalEntryDto>());
+            }
+            catch (ArgumentException ex)
+            {
+                return Result<JournalEntryDto>.Failure(ex.Message);
+            }
         }
 
-        public async Task DeleteJournalAsync(Guid journalId)
+        public async Task<Result> DeleteJournalAsync(Guid journalId, Guid userId)
         {
             var entry = await _journalRepo.GetByIdAsync(journalId);
-            if (entry != null) await _journalRepo.DeleteAsync(entry);
+            if (entry == null || !await HasAccessAsync(entry.TripId, userId))
+                return Result.Failure("Journal entry not found or access denied.");
+
+            await _journalRepo.DeleteAsync(entry);
+            await _journalRepo.SaveChangesAsync();
+            return Result.Success();
         }
 
-        public async Task<IEnumerable<MemoryTimelineItemDto>> GetMemoryTimelineAsync(Guid tripId)
+        public async Task<Result<IEnumerable<MemoryTimelineItemDto>>> GetMemoryTimelineAsync(Guid tripId, Guid userId)
         {
+            if (!await HasAccessAsync(tripId, userId))
+                return Result<IEnumerable<MemoryTimelineItemDto>>.Failure("Trip not found or access denied.");
+
             var photos = await _memoryRepo.GetPhotosByTripIdAsync(tripId);
             var journals = await _journalRepo.GetByTripIdAsync(tripId);
 
@@ -165,26 +203,29 @@ namespace Infrastructure.Services
             {
                 Type = "Photo",
                 Date = p.TakenAt,
-                Data = MapPhotoToDto(p)
+                Data = p.Adapt<MemoryPhotoDto>()
             }));
 
             timeline.AddRange(journals.Select(j => new MemoryTimelineItemDto
             {
                 Type = "Journal",
                 Date = j.EntryDate,
-                Data = MapJournalToDto(j)
+                Data = j.Adapt<JournalEntryDto>()
             }));
 
-            return timeline.OrderByDescending(t => t.Date);
+            return Result<IEnumerable<MemoryTimelineItemDto>>.Success(timeline.OrderByDescending(t => t.Date));
         }
 
-        public async Task<TripSummaryDto> GetTripSummaryAsync(Guid tripId)
+        public async Task<Result<TripSummaryDto>> GetTripSummaryAsync(Guid tripId, Guid userId)
         {
+            var trip = await _tripRepo.GetByIdAndUserIdAsync(tripId, userId);
+            if (trip == null)
+                return Result<TripSummaryDto>.Failure("Trip not found or access denied.");
+
             var photos = await _memoryRepo.GetPhotosByTripIdAsync(tripId);
             var journals = await _journalRepo.GetByTripIdAsync(tripId);
-            var trip = await _tripRepo.GetByIdAsync(tripId);
 
-            return new TripSummaryDto
+            return Result<TripSummaryDto>.Success(new TripSummaryDto
             {
                 TotalPhotos = photos.Count(),
                 TotalJournals = journals.Count(),
@@ -201,36 +242,13 @@ namespace Infrastructure.Services
                                 .Select(g => g.Key)
                                 .ToList(),
                 TotalDays = (trip.EndDate - trip.StartDate).Days + 1
-            };
+            });
         }
 
-        public async Task<IEnumerable<MemoryTagDto>> GetAllTagsAsync()
+        public async Task<Result<IEnumerable<MemoryTagDto>>> GetAllTagsAsync()
         {
             var tags = await _tagRepo.GetAllAsync();
-            return tags.Select(t => new MemoryTagDto { Id = t.Id, Name = t.Name, Category = t.Category });
+            return Result<IEnumerable<MemoryTagDto>>.Success(tags.Select(t => t.Adapt<MemoryTagDto>()));
         }
-
-        private MemoryPhotoDto MapPhotoToDto(MemoryPhoto photo) => new MemoryPhotoDto
-        {
-            Id = photo.Id,
-            TripId = photo.TripId,
-            Title = photo.Title,
-            Description = photo.Description,
-            FilePath = photo.FilePath,
-            TakenAt = photo.TakenAt,
-            Location = photo.Location,
-            Tags = photo.Tags.Select(t => new MemoryTagDto { Id = t.TagId, Name = t.Tag.Name, Category = t.Tag.Category }).ToList()
-        };
-
-        private JournalEntryDto MapJournalToDto(JournalEntry entry) => new JournalEntryDto
-        {
-            Id = entry.Id,
-            TripId = entry.TripId,
-            Title = entry.Title,
-            Content = entry.Content,
-            EntryDate = entry.EntryDate,
-            Location = entry.Location,
-            CreatedAt = entry.CreatedAt
-        };
     }
 }

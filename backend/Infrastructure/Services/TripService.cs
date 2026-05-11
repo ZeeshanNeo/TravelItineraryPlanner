@@ -4,10 +4,12 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Application.Common.Models;
 using Application.DTOs.Trip;
 using Application.Services;
 using Domain.Entities;
 using Domain.Interfaces;
+using Mapster;
 
 namespace Infrastructure.Services;
 
@@ -20,120 +22,120 @@ public class TripService : ITripService
         _tripRepository = tripRepository;
     }
 
-    public async Task<TripResponse> CreateTripAsync(CreateTripRequest request, Guid userId, CancellationToken cancellationToken = default)
+    public async Task<Result<TripResponse>> CreateTripAsync(CreateTripRequest request, Guid userId, CancellationToken cancellationToken = default)
     {
-        var trip = new Trip
+        try
         {
-            UserId = userId,
-            Title = request.Title,
-            Destination = request.Destination,
-            StartDate = request.StartDate,
-            EndDate = request.EndDate,
-            TravelType = request.TravelType,
-            Purpose = request.Purpose,
-            Notes = request.Notes,
-            TravelCompanions = SerializeCompanions(request.TravelCompanions),
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
+            var travelCompanionsJson = request.TravelCompanions != null && request.TravelCompanions.Any()
+                ? JsonDocument.Parse(JsonSerializer.Serialize(request.TravelCompanions))
+                : null;
 
-        await _tripRepository.AddAsync(trip, cancellationToken);
-        await _tripRepository.SaveChangesAsync(cancellationToken);
+            var trip = new Trip(
+                userId,
+                request.Title,
+                request.Destination,
+                request.StartDate,
+                request.EndDate,
+                request.TravelType,
+                request.Purpose,
+                request.Notes,
+                travelCompanionsJson
+            );
 
-        return MapToResponse(trip);
+            await _tripRepository.AddAsync(trip, cancellationToken);
+            await _tripRepository.SaveChangesAsync(cancellationToken);
+
+            var response = trip.Adapt<TripResponse>();
+            
+            // Manually map TravelCompanions to avoid Mapster issues with JsonDocument
+            if (trip.TravelCompanions != null)
+            {
+                response.TravelCompanions = JsonSerializer.Deserialize<List<string>>(trip.TravelCompanions.RootElement.GetRawText());
+            }
+
+            return Result<TripResponse>.Success(response);
+        }
+        catch (ArgumentException ex)
+        {
+            return Result<TripResponse>.Failure(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            // Log the detailed error (simulated here since I can't see logs)
+            // Returning the message helps debug the 500 error
+            return Result<TripResponse>.Failure($"Internal Server Error: {ex.Message}");
+        }
     }
 
-    public async Task<TripResponse> GetTripAsync(Guid tripId, Guid userId, CancellationToken cancellationToken = default)
+    public async Task<Result<TripResponse>> GetTripAsync(Guid tripId, Guid userId, CancellationToken cancellationToken = default)
     {
         var trip = await _tripRepository.GetByIdAndUserIdAsync(tripId, userId, cancellationToken);
         if (trip == null)
-            throw new KeyNotFoundException("Trip not found.");
+            return Result<TripResponse>.Failure("Trip not found.");
 
-        return MapToResponse(trip);
+        return Result<TripResponse>.Success(trip.Adapt<TripResponse>());
     }
 
-    public async Task<IEnumerable<TripResponse>> GetUserTripsAsync(Guid userId, bool includeArchived = false, CancellationToken cancellationToken = default)
+    public async Task<Result<IEnumerable<TripResponse>>> GetUserTripsAsync(Guid userId, bool includeArchived = false, CancellationToken cancellationToken = default)
     {
         var trips = await _tripRepository.GetByUserIdAsync(userId, includeArchived, cancellationToken);
-        return trips.Select(MapToResponse);
+        var responses = trips.Select(t => t.Adapt<TripResponse>());
+        return Result<IEnumerable<TripResponse>>.Success(responses);
     }
 
-    public async Task<TripResponse> UpdateTripAsync(Guid tripId, UpdateTripRequest request, Guid userId, CancellationToken cancellationToken = default)
+    public async Task<Result<TripResponse>> UpdateTripAsync(Guid tripId, UpdateTripRequest request, Guid userId, CancellationToken cancellationToken = default)
     {
         var trip = await _tripRepository.GetByIdAndUserIdAsync(tripId, userId, cancellationToken);
         if (trip == null)
-            throw new KeyNotFoundException("Trip not found.");
+            return Result<TripResponse>.Failure("Trip not found.");
 
-        if (request.Title != null) trip.Title = request.Title;
-        if (request.Destination != null) trip.Destination = request.Destination;
-        if (request.StartDate.HasValue) trip.StartDate = request.StartDate.Value;
-        if (request.EndDate.HasValue) trip.EndDate = request.EndDate.Value;
-        if (request.TravelType.HasValue) trip.TravelType = request.TravelType.Value;
-        if (request.Purpose != null) trip.Purpose = request.Purpose;
-        if (request.Notes != null) trip.Notes = request.Notes;
-        if (request.TravelCompanions != null) trip.TravelCompanions = SerializeCompanions(request.TravelCompanions);
+        try
+        {
+            trip.UpdateDetails(
+                request.Title ?? trip.Title,
+                request.Destination ?? trip.Destination,
+                request.StartDate ?? trip.StartDate,
+                request.EndDate ?? trip.EndDate,
+                request.TravelType ?? trip.TravelType,
+                request.Purpose ?? trip.Purpose,
+                request.Notes ?? trip.Notes,
+                request.TravelCompanions != null ? JsonDocument.Parse(JsonSerializer.Serialize(request.TravelCompanions)) : trip.TravelCompanions
+            );
 
-        trip.UpdatedAt = DateTime.UtcNow;
+            _tripRepository.Update(trip);
+            await _tripRepository.SaveChangesAsync(cancellationToken);
+
+            return Result<TripResponse>.Success(trip.Adapt<TripResponse>());
+        }
+        catch (ArgumentException ex)
+        {
+            return Result<TripResponse>.Failure(ex.Message);
+        }
+    }
+
+    public async Task<Result> ArchiveTripAsync(Guid tripId, ArchiveTripRequest request, Guid userId, CancellationToken cancellationToken = default)
+    {
+        var trip = await _tripRepository.GetByIdAndUserIdAsync(tripId, userId, cancellationToken);
+        if (trip == null)
+            return Result.Failure("Trip not found.");
+
+        trip.SetArchiveStatus(request.IsArchived);
 
         _tripRepository.Update(trip);
         await _tripRepository.SaveChangesAsync(cancellationToken);
 
-        return MapToResponse(trip);
+        return Result.Success();
     }
 
-    public async Task ArchiveTripAsync(Guid tripId, ArchiveTripRequest request, Guid userId, CancellationToken cancellationToken = default)
+    public async Task<Result> DeleteTripAsync(Guid tripId, Guid userId, CancellationToken cancellationToken = default)
     {
         var trip = await _tripRepository.GetByIdAndUserIdAsync(tripId, userId, cancellationToken);
         if (trip == null)
-            throw new KeyNotFoundException("Trip not found.");
-
-        trip.IsArchived = request.IsArchived;
-        trip.UpdatedAt = DateTime.UtcNow;
-
-        _tripRepository.Update(trip);
-        await _tripRepository.SaveChangesAsync(cancellationToken);
-    }
-
-    public async Task DeleteTripAsync(Guid tripId, Guid userId, CancellationToken cancellationToken = default)
-    {
-        var trip = await _tripRepository.GetByIdAndUserIdAsync(tripId, userId, cancellationToken);
-        if (trip == null)
-            throw new KeyNotFoundException("Trip not found.");
+            return Result.Failure("Trip not found.");
 
         await _tripRepository.DeleteAsync(tripId, cancellationToken);
         await _tripRepository.SaveChangesAsync(cancellationToken);
-    }
 
-    private static JsonDocument? SerializeCompanions(List<string>? companions)
-    {
-        if (companions == null) return null;
-        return JsonDocument.Parse(JsonSerializer.Serialize(companions));
-    }
-
-    private static List<string>? DeserializeCompanions(JsonDocument? document)
-    {
-        if (document == null) return null;
-        return JsonSerializer.Deserialize<List<string>>(document.RootElement.GetRawText());
-    }
-
-    private static TripResponse MapToResponse(Trip trip)
-    {
-        return new TripResponse
-        {
-            Id = trip.Id,
-            UserId = trip.UserId,
-            Title = trip.Title,
-            Destination = trip.Destination,
-            StartDate = trip.StartDate,
-            EndDate = trip.EndDate,
-            TravelType = trip.TravelType.ToString(),
-            Purpose = trip.Purpose,
-            Notes = trip.Notes,
-            TravelCompanions = DeserializeCompanions(trip.TravelCompanions),
-            IsArchived = trip.IsArchived,
-            CreatedAt = trip.CreatedAt,
-            UpdatedAt = trip.UpdatedAt
-        };
+        return Result.Success();
     }
 }
